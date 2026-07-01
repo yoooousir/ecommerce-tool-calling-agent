@@ -1,0 +1,41 @@
+# dbt_project.yml
+# ============================================================
+# dbt 프로젝트 설정 파일.
+# "naver_shop" 프로젝트가 어떤 폴더 구조를 쓰고, 각 모델 디렉토리를
+# 어떤 materialization(view/table) 전략으로 생성할지 정의한다.
+#
+# [폴더 구조와 레이어 설계]
+#   models/staging/  : raw products 테이블을 1:1로 정제(타입 캐스팅, 컬럼명 정리,
+#                       이상치/공백 처리)만 하는 가장 낮은 레이어. view로 생성해
+#                       항상 원본 변경을 즉시 반영하면서도 디스크를 차지하지 않게 함
+#   models/marts/    : staging을 기반으로 비즈니스 로직(카테고리 정규화, 가격대 구간화,
+#                       검색/추천에 바로 쓸 수 있는 최종 분석 테이블)을 적용하는 레이어.
+#                       table로 materialize해 매번 재계산하지 않고 빠르게 조회 가능하게 함
+# ============================================================
+
+name: 'naver_shop'
+version: '1.0.0'
+config-version: 2
+
+# profiles.yml에서 이 이름과 동일한 프로파일을 찾아 접속 정보를 가져온다
+profile: 'naver_shop'
+
+model-paths: ["models"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  naver_shop:
+    staging:
+      # staging 레이어는 가벼운 정제만 하므로 view로 둬서 항상 최신 raw 데이터를 반영
+      +materialized: view
+    marts:
+      # marts 레이어는 분석/검색에 바로 쓰일 최종 테이블이므로 table로 고정해
+      # 매 조회마다 재계산하지 않고 빠르게 응답하도록 함
+      +materialized: table

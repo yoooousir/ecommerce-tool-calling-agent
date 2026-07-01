@@ -1,0 +1,30 @@
+# profiles.yml
+# ============================================================
+# dbt가 어떤 데이터베이스에, 어떻게 접속할지 정의하는 파일.
+# dbt_project.yml의 `profile: naver_shop`이 여기서 동일한 이름의
+# 프로파일(아래 naver_shop:)을 찾아 접속 정보를 가져온다.
+#
+# 이 파일은 보통 ~/.dbt/profiles.yml 에 두거나, 환경변수
+# DBT_PROFILES_DIR로 위치를 지정한다 (Airflow DAG에서는 후자를 사용).
+#
+# [SQLite 어댑터 사용 이유]
+# 현재 적재 단계(collect_naver_shopping_prod.py)가 SQLite(products.db)에
+# 데이터를 쌓고 있으므로, dbt도 동일한 SQLite 파일을 그대로 가리키도록
+# dbt-sqlite 어댑터(community adapter)를 사용한다.
+# 추후 PostgreSQL로 전환 시, 이 profiles.yml의 type/내용만 postgres로
+# 바꾸면 되고 models/ 안의 SQL 코드는 대부분 그대로 재사용 가능하다.
+# ============================================================
+
+naver_shop:
+  target: dev
+  outputs:
+    dev:
+      type: sqlite
+      # collect_naver_shopping_prod.py의 OUTPUT_DIR과 동일한 경로를 가리켜야 함
+      # (Airflow 컨테이너에서는 마운트된 볼륨 경로로 환경변수를 통해 주입)
+      threads: 1
+      database: "database"
+      schema: "main"
+      schemas_and_paths:
+        main: "{{ env_var('NAVER_DATA_DIR', '/opt/airflow/data') }}/products.db"
+      schema_directory: "{{ env_var('NAVER_DATA_DIR', '/opt/airflow/data') }}"

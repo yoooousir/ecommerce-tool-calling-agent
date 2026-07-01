@@ -1,0 +1,45 @@
+# schema.yml (marts)
+# ============================================================
+# marts 레이어 모델들의 컬럼 문서 + dbt 테스트(데이터 품질 검증) 정의.
+# `dbt test` 실행 시 이 파일에 정의된 테스트들이 자동으로 수행되어,
+# 예를 들어 product_id가 실제로 유일한지, null이 없는지 등을 검증한다.
+# Airflow DAG의 dbt_test Task가 바로 이 정의를 기반으로 동작한다.
+# ============================================================
+
+version: 2
+
+models:
+  - name: dim_products
+    description: "쇼핑 에이전트의 RDBMS 조건 검색(search_by_text 도구) 대상이 되는 최종 상품 카탈로그"
+    columns:
+      - name: product_id
+        description: "상품 고유 ID"
+        tests:
+          - unique          # product_id 값이 테이블 내에서 중복되지 않는지 검증
+          - not_null        # product_id가 비어있는 행이 없는지 검증
+      - name: link
+        description: "상품 상세 페이지 URL"
+        tests:
+          - unique
+          - not_null
+      - name: low_price
+        description: "최저가 (원)"
+        tests:
+          - not_null
+      - name: price_bucket
+        description: "가격 구간 (budget/mid/premium)"
+        tests:
+          - accepted_values:   # 정의된 세 값 외 다른 값이 들어가면 테스트 실패
+              values: ['budget', 'mid', 'premium']
+
+  - name: category_summary
+    description: "카테고리(대분류)별 수집 현황 요약 — 데이터 품질 점검 및 대시보드용"
+    columns:
+      - name: category_l1
+        description: "대분류 카테고리명"
+        tests:
+          - unique
+      - name: product_count
+        description: "해당 카테고리의 상품 수"
+        tests:
+          - not_null

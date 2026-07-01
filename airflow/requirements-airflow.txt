@@ -1,0 +1,14 @@
+# requirements-airflow.txt
+# ============================================================
+# Airflow 공식 Docker 이미지에는 기본적으로 포함되어 있지 않은
+# 추가 패키지 목록. docker-compose.yml의 Airflow 서비스들이
+# 빌드 시 이 파일을 pip install 하도록 구성한다.
+#
+# - requests        : 네이버 쇼핑 API 호출(collect_naver_shopping_prod.py)
+# - dbt-core         : dbt 명령어(run/test) 실행
+# - dbt-sqlite       : SQLite를 dbt의 대상 데이터베이스로 사용하기 위한 어댑터
+#                      (커뮤니티 유지보수 어댑터; PostgreSQL 전환 시 dbt-postgres로 교체)
+# ============================================================
+requests==2.34.2
+dbt-core==1.8.0
+dbt-sqlite==1.8.0

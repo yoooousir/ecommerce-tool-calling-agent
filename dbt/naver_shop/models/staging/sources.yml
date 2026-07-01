@@ -1,0 +1,25 @@
+# sources.yml
+# ============================================================
+# dbt가 "원본 데이터"로 인식할 테이블을 등록하는 파일.
+# collect_naver_shopping_prod.py가 적재한 SQLite의 products 테이블을
+# dbt 입장에서 "raw 소스"로 선언해, 이후 staging 모델들이
+# source('naver_raw', 'products') 형태로 참조할 수 있게 한다.
+#
+# source로 선언해두면 dbt docs(문서 자동생성), dbt source freshness
+# (데이터가 너무 오래되지 않았는지 검사) 같은 기능도 함께 활용 가능하다.
+# ============================================================
+
+version: 2
+
+sources:
+  - name: naver_raw
+    description: "collect_naver_shopping_prod.py가 네이버 쇼핑 API로부터 수집해 적재한 원본 상품 테이블"
+    schema: main
+    tables:
+      - name: products
+        description: "키워드 검색 기반으로 수집된 네이버 쇼핑 상품 원본 데이터 (정제 전)"
+        columns:
+          - name: id
+            description: "상품 고유 ID (자동 증가)"
+          - name: link
+            description: "상품 상세 페이지 URL (UNIQUE)"

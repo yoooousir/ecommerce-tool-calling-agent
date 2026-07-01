@@ -1,0 +1,124 @@
+# docker-compose.yml
+# ============================================================
+# Docker Desktop 위에서 Airflow(LocalExecutor 기반 단일 노드 구성)를 띄우고,
+# 우리 프로젝트의 크롤러 코드 / dbt 프로젝트 / 데이터 디렉토리를
+# 컨테이너에 볼륨 마운트하여 DAG에서 바로 사용할 수 있게 한다.
+#
+# [구성 요소]
+#   postgres         : Airflow의 메타데이터(DAG 실행 이력 등)를 저장하는 내부 DB
+#                       (우리 상품 데이터를 저장하는 SQLite와는 별개. Airflow 자체 운영용)
+#   airflow-init      : 최초 1회 DB 마이그레이션 + 관리자 계정 생성
+#   airflow-webserver  : Airflow UI (기본 포트 8080)
+#   airflow-scheduler  : DAG 스케줄링 및 Task 실행을 담당하는 핵심 프로세스
+#
+# [실행 방법]
+#   1) 이 파일이 있는 디렉토리(naver_crawler/airflow)에서 아래 명령 실행
+#        docker compose up airflow-init
+#        docker compose up -d
+#   2) 브라우저에서 http://localhost:8080 접속 (기본 계정 airflow/airflow)
+#   3) DAG 목록에서 naver_shopping_pipeline을 찾아 켜고(Unpause) 트리거
+#
+# [환경변수 전달]
+#   NAVER_CLIENT_ID, NAVER_CLIENT_SECRET은 .env 파일에 작성해두면
+#   아래 environment 항목의 ${VAR} 문법으로 컨테이너 안까지 자동 전달된다.
+#   예) .env 파일 내용:
+#         NAVER_CLIENT_ID=발급받은ID
+#         NAVER_CLIENT_SECRET=발급받은SECRET
+# ============================================================
+
+x-airflow-common:
+  &airflow-common
+  image: apache/airflow:2.9.0-python3.11
+  environment:
+    &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    # PYTHONPATH에 우리 크롤러 스크립트 위치를 추가해, DAG 안에서
+    # `from collect_naver_shopping_prod import ...` 가 동작하도록 함
+    PYTHONPATH: "/opt/airflow/project:${PYTHONPATH}"
+    # 우리 애플리케이션 환경변수 (네이버 API 인증, 데이터 저장 경로)
+    NAVER_CLIENT_ID: ${NAVER_CLIENT_ID}
+    NAVER_CLIENT_SECRET: ${NAVER_CLIENT_SECRET}
+    NAVER_DATA_DIR: /opt/airflow/data
+  volumes:
+    - ./dags:/opt/airflow/dags
+    # 프로젝트 루트(collect_naver_shopping_prod.py가 있는 상위 폴더)를 마운트
+    - ../:/opt/airflow/project
+    # dbt 프로젝트 마운트 (DAG의 DBT_PROJECT_DIR과 동일 경로로 맞춤)
+    - ../dbt/naver_shop:/opt/airflow/dbt/naver_shop
+    # SQLite DB 파일 등 데이터 산출물을 영속 저장할 경로
+    - ./data:/opt/airflow/data
+    - airflow-logs:/opt/airflow/logs
+  user: "${AIRFLOW_UID:-50000}:0"
+  depends_on:
+    &airflow-common-depends-on
+    postgres:
+      condition: service_healthy
+
+services:
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      retries: 5
+    restart: always
+
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        # requirements-airflow.txt에 정의된 추가 패키지(requests, dbt 등)를 설치한 뒤
+        # Airflow 메타데이터 DB를 초기화하고 관리자 계정을 생성한다.
+        pip install --no-cache-dir -r /opt/airflow/project/airflow/requirements-airflow.txt
+        airflow db migrate
+        airflow users create \
+          --username airflow --password airflow \
+          --firstname Linda --lastname Kim \
+          --role Admin --email admin@example.com
+    environment:
+      <<: *airflow-common-env
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - "8081:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+    restart: always
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+    restart: always
+
+volumes:
+  postgres-db-volume:
+  airflow-logs:
