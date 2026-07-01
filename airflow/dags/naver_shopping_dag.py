@@ -144,7 +144,7 @@ def _download_images(**context):
     """
     from collect_naver_shopping_prod import run_download_images
 
-    run_download_images(limit=2000)  # 운영 안정화 전까지는 2,000건으로 제한 (필요시 조정)
+    run_download_images(limit=200)  # 운영 안정화 전까지는 200건으로 제한 (필요시 조정)
 
 
 download_images = PythonOperator(
