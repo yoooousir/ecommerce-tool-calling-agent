@@ -28,7 +28,7 @@
 
 x-airflow-common:
   &airflow-common
-  image: apache/airflow:2.9.0-python3.11
+  build: .
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
@@ -41,6 +41,12 @@ x-airflow-common:
     NAVER_CLIENT_ID: ${NAVER_CLIENT_ID}
     NAVER_CLIENT_SECRET: ${NAVER_CLIENT_SECRET}
     NAVER_DATA_DIR: /opt/airflow/data
+    # AWS S3 관련 환경변수 (DAG에서 dbt run 시 S3에 결과 업로드)
+    S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+    S3_KEY_PREFIX: ${S3_KEY_PREFIX}
+    AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+    AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+    AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
   volumes:
     - ./dags:/opt/airflow/dags
     # 프로젝트 루트(collect_naver_shopping_prod.py가 있는 상위 폴더)를 마운트

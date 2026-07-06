@@ -1,5 +1,4 @@
-
-    select
+select
       count(*) as failures,
       case when count(*) != 0
         then 'true' else 'false' end as should_warn,
@@ -7,8 +6,6 @@
         then 'true' else 'false' end as should_error
     from (
       
-    
-  
     
     
 
@@ -23,7 +20,5 @@ having count(*) > 1
 
 
 
-  
-  
       
     ) dbt_internal_test

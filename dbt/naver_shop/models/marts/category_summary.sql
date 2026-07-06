@@ -1,9 +1,10 @@
--- category_summary.sql
+-- category_summary.sql (v2)
 -- ============================================================
--- marts 레이어: 카테고리별 수집 현황을 요약하는 모델.
--- 분석 자체의 결과물이라기보다, 데이터 품질 점검(특정 카테고리가
--- 너무 적게 수집되지는 않았는지)과 추후 비용/사용량 대시보드의
--- "카테고리별 분포" 패널에 바로 활용할 수 있도록 미리 집계해둔다.
+-- marts 레이어: 카테고리별 수집 현황 요약.
+--
+-- [v2 변경사항]
+--   제거: image_downloaded_count, image_coverage_pct
+--   (has_image 컬럼이 dim_products에서 제거되어 집계 불가)
 -- ============================================================
 
 with products as (
@@ -16,12 +17,10 @@ summary as (
 
     select
         category_l1,
-        count(*)                                   as product_count,
-        round(avg(low_price), 0)                   as avg_low_price,
-        min(low_price)                              as min_price,
-        max(low_price)                              as max_price,
-        sum(has_image)                               as image_downloaded_count,
-        round(100.0 * sum(has_image) / count(*), 1) as image_coverage_pct
+        count(*)                   as product_count,
+        round(avg(low_price), 0)   as avg_low_price,
+        min(low_price)             as min_price,
+        max(low_price)             as max_price
 
     from products
     group by category_l1

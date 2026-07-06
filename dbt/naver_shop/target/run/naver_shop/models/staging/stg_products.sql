@@ -1,17 +1,18 @@
 
     
     create view main."stg_products" as
-    -- stg_products.sql
+    -- stg_products.sql (v2)
 -- ============================================================
--- staging 레이어: raw products 테이블을 가공 없이 "정제"만 하는 모델.
--- 여기서는 비즈니스 로직(카테고리 정규화, 가격대 구간화 등)을 넣지 않고,
--- 다음 두 가지만 처리한다:
---   1) 컬럼명을 분석하기 쉬운 snake_case로 통일 (이미 snake_case지만 명시적으로 alias)
---   2) 결측치/이상치 처리: 가격이 0이거나 음수인 행, 제목이 빈 행을 걸러냄
---      (네이버 API 응답에 가끔 가격 정보가 없는 상품이 섞여 있어 분석/검색 품질을 위해 제외)
+-- staging 레이어: raw products 테이블 1차 정제.
 --
--- materialized: view (dbt_project.yml에서 staging 레이어 전체에 설정됨)
---   → 매번 raw 테이블을 그대로 비추는 가벼운 뷰라서, 적재 직후 바로 최신값 반영
+-- [v2 변경사항]
+--   제거된 컬럼:
+--     - description      → S3 parquet으로 분리
+--     - image_url        → S3 parquet으로 분리
+--     - local_image_path → download_images Task 제거로 불필요
+--
+-- 남은 컬럼은 모두 RDBMS 조건 검색(가격/카테고리 필터링)에
+-- 직접 사용되는 정형 데이터이다.
 -- ============================================================
 
 with source as (
@@ -26,9 +27,6 @@ cleaned as (
         id                              as product_id,
         trim(title)                     as title,
         link,
-        image_url,
-        local_image_path,
-        description,
         lprice                          as low_price,
         hprice                          as high_price,
         trim(mall_name)                 as mall_name,
@@ -42,7 +40,7 @@ cleaned as (
         collected_at
 
     from source
-    -- 가격 정보가 없거나(0 이하) 제목이 비어있는 비정상 행은 분석/검색 대상에서 제외
+    -- 가격이 0 이하이거나 제목이 비어있는 비정상 행 제외
     where lprice > 0
       and title is not null
       and trim(title) != ''

@@ -2,81 +2,62 @@
 collect_naver_shopping.py
 ===========================
 네이버 쇼핑 검색 오픈API를 이용해 상품 데이터를 수집하고,
-로컬 SQLite 데이터베이스에 적재하는 운영(production) 버전 스크립트.
+로컬 SQLite + AWS S3(parquet)에 적재하는 운영(production) 버전 스크립트.
 
-[테스트 버전과의 차이점]
-  - 키워드 5개 → 65개 전체 활성화 (패션/전자/가전/주방/뷰티 5개 카테고리 골고루)
-  - save_to_db()의 실제 INSERT 로직 활성화 (테스트 버전은 콘솔 출력 + 미리보기 이미지 2장만 받음)
-  - Airflow DAG에서 각 단계(crawl/load/download_images)를 개별 Task로 호출할 수 있도록
-    main()의 로직을 재사용 가능한 함수로 분리
+[v2 변경사항]
+  - description, image_url, local_image_path 3개 컬럼을 SQLite에서 제거
+    → 대신 S3에 parquet 파일(id, description, image_url)로 분리 저장
+  - upload_to_s3() 함수 추가 (Airflow Task 2에 대응)
+  - run_download_images() 코드는 유지하되 DAG Task에서는 제거됨
 
-[사전 준비]
-  1. https://developers.naver.com 에서 애플리케이션 등록 (사용 API: 검색)
-  2. 발급받은 Client ID / Secret을 환경변수로 등록
-       export NAVER_CLIENT_ID="발급받은 ID"
-       export NAVER_CLIENT_SECRET="발급받은 SECRET"
-  3. pip install requests --break-system-packages (Airflow 컨테이너에서는 requirements.txt로 설치)
+[데이터 분리 이유]
+  - SQLite: 조건 검색(가격/카테고리 필터링)에 쓰이는 정형 데이터만 담당
+  - S3 parquet: 텍스트 임베딩용 description + 이미지 URL처럼 크기가 크거나
+    벡터DB 파이프라인에서 직접 읽을 데이터를 분리해 저장
+    → SQLite 부담 감소, 나중에 임베딩 파이프라인이 S3에서 직접 읽어 처리 가능
 
 [데이터 흐름]
   네이버 검색 API
-       │  (키워드별로 페이지네이션 반복 호출)
-       ▼
-  fetch_page()       : 1회 호출 = 최대 100건 응답(JSON)
-       │
-       ▼
-  collect_keyword()  : 한 키워드에 대해 목표 건수까지 페이지를 넘기며 수집
-       │
-       ▼
-  dedup_by_link()    : 같은 키워드 내에서 중복 상품(link 기준) 1차 제거
-       │
-       ▼
-  save_to_db()        : SQLite products 테이블에 INSERT OR IGNORE로 적재 (2차 중복 방지)
-       │                 + build_pseudo_description()으로 임베딩용 설명문 같이 생성
-       ▼
-  (선택) download_images() : DB에 저장된 image_url을 실제 파일로 다운로드 (CLIP 임베딩용)
-       │
-       ▼
-  export_csv()        : 최종 적재 결과를 CSV로도 내보내 검수 가능하게 함
+       ↓
+  collect_keyword() → dedup_by_link() → save_to_db() [SQLite, 정형 데이터만]
+                                      → upload_to_s3() [S3 parquet, id/desc/image_url]
 """
 
 import os
+import io
 import time
-import json
 import csv
 import sqlite3
 import requests
+import pandas as pd
+import boto3
 from pathlib import Path
-from urllib.parse import quote
 from datetime import datetime
 
 # ----------------------------------------------------------------------
 # 환경 설정값
 # ----------------------------------------------------------------------
 
-# 네이버 개발자센터에서 발급받은 인증 정보. 코드에 직접 하드코딩하지 않고
-# 환경변수로 주입받아, 실수로 GitHub 등에 키가 노출되는 사고를 방지한다.
-CLIENT_ID = os.environ.get("NAVER_CLIENT_ID", "")
+CLIENT_ID     = os.environ.get("NAVER_CLIENT_ID", "")
 CLIENT_SECRET = os.environ.get("NAVER_CLIENT_SECRET", "")
+API_URL       = "https://openapi.naver.com/v1/search/shop.json"
 
-# 네이버 쇼핑 검색 오픈API 엔드포인트 (공식 허용 경로, 비로그인 오픈 API)
-API_URL = "https://openapi.naver.com/v1/search/shop.json"
-
-# 데이터 저장 경로. 컨테이너(Airflow) 환경에서도 동일하게 동작하도록
-# 상대경로 대신 환경변수로 베이스 경로를 오버라이드할 수 있게 함.
-# (Airflow DAG에서는 DAG가 마운트한 볼륨 경로를 NAVER_DATA_DIR로 지정해서 사용)
+# SQLite 저장 경로
 OUTPUT_DIR = Path(os.environ.get("NAVER_DATA_DIR", "./naver_shopping_data"))
-OUTPUT_DIR.mkdir(exist_ok=True, parents=True)
-IMAGE_DIR = OUTPUT_DIR / "images"
-IMAGE_DIR.mkdir(exist_ok=True, parents=True)
+DB_PATH    = OUTPUT_DIR / "products.db"
 
-DB_PATH = OUTPUT_DIR / "products.db"
+# S3 설정 — 버킷 이름은 환경변수로 주입 (코드에 하드코딩하지 않음)
+S3_BUCKET     = os.environ.get("S3_BUCKET_NAME", "")
+S3_KEY_PREFIX = os.environ.get("S3_KEY_PREFIX", "naver_shopping")
+# 최종 S3 경로: s3://{버킷}/naver_shopping/2026/07/02/products.parquet
+# 년/월/일 파티션 구조로 저장해 날짜별 데이터 관리 및 조회가 용이
 
-# ----------------------------------------------------------------------
-# 수집 대상 키워드 (전체 65개 활성화)
-# 패션/잡화(15) + 전자기기(10) + 가전(9) + 주방용품(17) + 뷰티(12) = 63개
-#   ※ 처음 5개(운동화/후드티/청바지/패딩/원피스)는 테스트 단계에서부터 쓰던 키워드라 중복 포함
-# 카테고리를 다양하게 섞어야, 멀티모달 검색/추천 데모 시 카테고리 편중 없이 보여줄 수 있음
-# ----------------------------------------------------------------------
+# 수집 파라미터
+DISPLAY_PER_CALL      = 100
+MAX_START_PER_KEYWORD = 1000
+SLEEP_SEC             = 0.15
+TARGET_TOTAL          = 10000
+
 KEYWORDS = [
     # 패션/액세서리
     "운동화", "후드티", "청바지", "패딩", "원피스",
@@ -94,82 +75,51 @@ KEYWORDS = [
     "파운데이션", "마스카라", "헤어드라이기", "고데기", "네일아트",
 ]
 
-# 네이버 쇼핑 검색 API의 호출 제약사항
-DISPLAY_PER_CALL = 100        # 1회 호출당 최대 응답 건수 (API 정책상 최댓값)
-MAX_START_PER_KEYWORD = 1000  # 한 키워드로 조회 가능한 최대 순위 범위 (그 이상은 API가 거부)
-SLEEP_SEC = 0.15              # 호출 간 딜레이(초). 과도한 연속 호출로 인한 차단/부하를 방지
-
-# 키워드당 목표 수집 건수는 기존 설계를 그대로 유지
-# (전체 목표 10,000건을 키워드 개수로 나눈 값, 최소 100건은 보장)
-TARGET_TOTAL = 10000
-
 
 # ----------------------------------------------------------------------
-# 1. API 호출 함수
+# 1. API 호출
 # ----------------------------------------------------------------------
 
 def fetch_page(keyword: str, start: int, display: int = DISPLAY_PER_CALL) -> dict:
     """
-    네이버 쇼핑 검색 API에 단일 HTTP 요청을 보내고 JSON 응답을 반환한다.
-
-    Args:
-        keyword: 검색어 (예: "운동화")
-        start: 검색 결과 중 몇 번째부터 가져올지 (1부터 시작, 페이지네이션용)
-        display: 이번 호출에서 몇 건을 요청할지 (최대 100)
-
-    Returns:
-        성공 시 네이버 API의 JSON 응답을 dict로 반환.
-        실패(인증오류/한도초과 등) 시 경고를 출력하고 빈 dict를 반환해
-        호출부에서 안전하게 처리할 수 있도록 함.
+    네이버 쇼핑 검색 API 단일 호출.
+    start 파라미터로 페이지네이션 (1, 101, 201 ... 식으로 display만큼 증가).
+    실패 시 빈 dict 반환 → 호출부에서 안전하게 처리.
     """
     headers = {
         "X-Naver-Client-Id": CLIENT_ID,
         "X-Naver-Client-Secret": CLIENT_SECRET,
     }
     params = {
-        "query": keyword,   # 검색할 단어
-        "display": display, # 한 번 호출에 몇 개 받을지 (API 최대 허용치 100)
-        "start": start,     # 몇 번째부터 가져올지 (1, 101, 201 ... 식으로 display만큼 건너뛰며 호출)
-        "sort": "sim",      # 정확도순 정렬 (date=최신순, asc/dsc=가격순 도 가능)
+        "query": keyword,
+        "display": display,
+        "start": start,
+        "sort": "sim",  # 정확도순
     }
     resp = requests.get(API_URL, headers=headers, params=params, timeout=10)
     if resp.status_code != 200:
-        print(f"  [WARN] status={resp.status_code} keyword={keyword} start={start} body={resp.text[:200]}")
+        print(f"  [WARN] status={resp.status_code} keyword={keyword} start={start}")
         return {}
     return resp.json()
 
 
 def collect_keyword(keyword: str, target_count: int = 500) -> list[dict]:
     """
-    한 키워드에 대해 target_count(또는 API가 허용하는 최대 범위인 1000건)까지
-    fetch_page()를 반복 호출하며 결과를 누적 수집한다.
-
-    Args:
-        keyword: 검색어
-        target_count: 이 키워드에서 목표로 하는 수집 건수
-
-    Returns:
-        수집된 상품 딕셔너리들의 리스트 (중복 제거는 아직 안 된 상태)
+    한 키워드에 대해 target_count(또는 API 최대 1000건)까지
+    fetch_page()를 반복 호출해 결과를 누적 수집.
     """
-    items = []  # 수집된 상품 데이터를 누적할 리스트
-    start = 1   # 네이버 API는 1번째 결과부터 시작 (0이 아님)
-
-    # 목표 건수를 채우거나, API가 허용하는 범위(1000)를 넘을 때까지 반복
+    items = []
+    start = 1
     while len(items) < target_count and start <= MAX_START_PER_KEYWORD:
-        remaining = target_count - len(items)          # 아직 몇 건 더 필요한지 계산
-        display = min(DISPLAY_PER_CALL, remaining)      # 이번 호출 요청 건수 (남은 필요량과 API 최대치 중 작은 값)
-
-        data = fetch_page(keyword, start, display)      # 실제 API 호출
-        page_items = data.get("items", [])              # 응답에서 상품 리스트만 추출 (에러 시 빈 리스트)
-
+        remaining = target_count - len(items)
+        display   = min(DISPLAY_PER_CALL, remaining)
+        data       = fetch_page(keyword, start, display)
+        page_items = data.get("items", [])
         if not page_items:
-            # 더 이상 결과가 없거나(검색결과 소진) API 에러였던 경우 → 반복 중단
             break
-
-        items.extend(page_items)  # 이번 페이지 결과를 누적
-        start += display          # 다음 호출은 이번에 받은 만큼 건너뛴 지점부터 시작
-        time.sleep(SLEEP_SEC)     # 과도한 연속 호출 방지용 딜레이
-
+        items.extend(page_items)
+        start += display
+        time.sleep(SLEEP_SEC)
     print(f"  [{keyword}] {len(items)}건 수집")
     return items
 
@@ -180,14 +130,10 @@ def collect_keyword(keyword: str, target_count: int = 500) -> list[dict]:
 
 def dedup_by_link(all_items: list[dict]) -> list[dict]:
     """
-    같은 키워드 내에서 여러 페이지에 걸쳐 동일 상품이 중복 수집된 경우,
-    link(상품 URL)를 기준으로 한 번씩만 남기고 걸러낸다.
-
-    (참고) 키워드 간 중복(예: "운동화"와 "신발" 검색결과가 겹치는 경우)은
-    여기서 못 잡고, DB의 link UNIQUE 제약 + INSERT OR IGNORE가 2차로 막아준다.
+    동일 키워드 내에서 link(상품 URL) 기준으로 중복 제거.
+    키워드 간 중복은 DB의 link UNIQUE 제약이 2차로 차단.
     """
-    seen = set()      # 지금까지 본 link를 기록 (집합은 조회 속도가 O(1)로 빠름)
-    deduped = []       # 중복 제거된 결과만 담을 리스트
+    seen, deduped = set(), []
     for it in all_items:
         link = it.get("link")
         if link and link not in seen:
@@ -197,51 +143,41 @@ def dedup_by_link(all_items: list[dict]) -> list[dict]:
 
 
 # ----------------------------------------------------------------------
-# 3. SQLite 스키마 정의 및 초기화
+# 3. SQLite 스키마 — description / image_url / local_image_path 제거
 # ----------------------------------------------------------------------
 
 def init_db() -> sqlite3.Connection:
     """
-    SQLite 데이터베이스 파일(DB_PATH)에 연결하고, products 테이블이 없으면 생성한다.
-    이미 테이블이 있으면(재실행 시) 그대로 두고 연결만 반환 (IF NOT EXISTS).
+    SQLite 연결 및 products 테이블 생성 (없을 때만).
 
-    [스키마 설명]
-      id               : 상품 고유 ID (자동 증가, PRIMARY KEY)
-      title            : 상품명 (HTML 태그 제거된 순수 텍스트)
-      link             : 상품 상세 페이지 URL (UNIQUE 제약으로 중복 적재 방지)
-      image_url        : 네이버가 제공하는 원본 상품 이미지 URL
-      local_image_path : 위 image_url을 실제로 다운로드해 저장한 로컬 파일 경로
-                          (download_images() 실행 전까지는 NULL)
-      description      : 텍스트 임베딩(벡터DB)용 의사 설명문.
-                          네이버 API가 상세설명을 제공하지 않아, title/brand/maker/
-                          category1~4/mallName을 조합해 build_pseudo_description()으로 생성
-      lprice / hprice  : 최저가 / 최고가 (정수, 원화 기준)
-      mall_name        : 판매 쇼핑몰명
-      maker / brand    : 제조사 / 브랜드
-      category1~4      : 네이버가 분류한 카테고리 (대분류→소분류 순)
-      search_keyword   : 이 상품을 수집할 때 사용한 검색어 (수집 의도 추적용)
-      collected_at     : 수집 시각 (ISO 8601 문자열)
+    [v2 스키마 변경]
+      제거된 컬럼:
+        - description      → S3 parquet으로 분리
+        - image_url        → S3 parquet으로 분리
+        - local_image_path → download_images Task 제거로 불필요
+
+      유지된 컬럼:
+        id, title, link, lprice, hprice, mall_name, maker, brand,
+        category1~4, search_keyword, collected_at
     """
+    OUTPUT_DIR.mkdir(exist_ok=True, parents=True)
     conn = sqlite3.connect(DB_PATH)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS products (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT,
-            link TEXT UNIQUE,
-            image_url TEXT,
-            local_image_path TEXT,
-            description TEXT,
-            lprice INTEGER,
-            hprice INTEGER,
-            mall_name TEXT,
-            maker TEXT,
-            brand TEXT,
-            category1 TEXT,
-            category2 TEXT,
-            category3 TEXT,
-            category4 TEXT,
-            search_keyword TEXT,
-            collected_at TEXT
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            title            TEXT,
+            link             TEXT UNIQUE,
+            lprice           INTEGER,
+            hprice           INTEGER,
+            mall_name        TEXT,
+            maker            TEXT,
+            brand            TEXT,
+            category1        TEXT,
+            category2        TEXT,
+            category3        TEXT,
+            category4        TEXT,
+            search_keyword   TEXT,
+            collected_at     TEXT
         )
     """)
     conn.commit()
@@ -249,28 +185,19 @@ def init_db() -> sqlite3.Connection:
 
 
 # ----------------------------------------------------------------------
-# 4. 텍스트 정제 및 의사 설명문 생성
+# 4. 텍스트 정제 및 의사 설명문 생성 (S3 parquet 전용)
 # ----------------------------------------------------------------------
 
 def strip_html_tags(text: str) -> str:
-    """네이버 API 응답의 title 필드에는 검색어 강조용 <b> 태그가 섞여 있어 제거한다."""
+    """네이버 API title 필드의 <b> 태그 제거."""
     return text.replace("<b>", "").replace("</b>", "")
 
 
 def build_pseudo_description(item: dict) -> str:
     """
-    네이버 쇼핑 검색 API는 상품 상세설명을 제공하지 않으므로,
-    응답에 포함된 메타데이터(제목/브랜드/제조사/카테고리/판매처)를 조합해
-    텍스트 임베딩(벡터 검색)용 의사 설명문을 생성한다.
-
-    추후 필요 시 이 의사 설명문을 LLM에 입력해 더 자연스러운 한 문장으로
-    다듬는 단계(증강)를 추가할 수 있도록 설계되어 있다.
-
-    Args:
-        item: 네이버 API가 반환한 상품 1건의 딕셔너리
-
-    Returns:
-        중복/빈 값이 제거된 공백 구분 텍스트 (예: "나이키 에어맥스 운동화 나이키 패션잡화 남성신발")
+    title + brand + maker + category1~4 + mallName 조합으로
+    텍스트 임베딩(벡터DB)용 의사 설명문 생성.
+    SQLite에는 저장하지 않고 S3 parquet에만 포함된다.
     """
     title = strip_html_tags(item.get("title", ""))
     parts = [
@@ -283,9 +210,7 @@ def build_pseudo_description(item: dict) -> str:
         item.get("category4", ""),
         item.get("mallName", ""),
     ]
-    # brand와 maker가 같은 값인 경우, 카테고리가 비어있는 경우 등을 정리
-    seen = set()
-    deduped_parts = []
+    seen, deduped_parts = set(), []
     for p in parts:
         p = (p or "").strip()
         if p and p not in seen:
@@ -295,103 +220,29 @@ def build_pseudo_description(item: dict) -> str:
 
 
 # ----------------------------------------------------------------------
-# 5. 이미지 다운로드 (CLIP 임베딩 준비용)
-# ----------------------------------------------------------------------
-
-def _download_single_image(url: str, filename_stem: str) -> str | None:
-    """
-    단일 이미지 URL을 다운로드하여 IMAGE_DIR에 저장하는 내부 헬퍼 함수.
-    download_images()(DB 기반 일괄 다운로드)에서 공통으로 사용한다.
-
-    Args:
-        url: 다운로드할 이미지 URL
-        filename_stem: 저장할 파일명(확장자 제외). 보통 상품 id를 사용
-
-    Returns:
-        성공 시 저장된 파일의 로컬 경로 문자열, 실패 시 None
-    """
-    if not url:
-        return None
-    headers = {"User-Agent": "Mozilla/5.0"}  # 일부 이미지 서버의 단순 차단을 피하기 위한 UA 헤더
-    try:
-        r = requests.get(url, headers=headers, timeout=10)
-        if r.status_code != 200:
-            return None
-        # URL 끝부분에서 확장자를 추출하되, 알 수 없는 형식이면 jpg로 기본 처리
-        ext = url.split(".")[-1].split("?")[0][:4]
-        if ext not in ("jpg", "jpeg", "png", "webp"):
-            ext = "jpg"
-        fname = IMAGE_DIR / f"{filename_stem}.{ext}"
-        fname.write_bytes(r.content)
-        return str(fname)
-    except Exception as e:
-        print(f"  [IMG ERROR] {url} -> {e}")
-        return None
-
-
-def download_images(conn: sqlite3.Connection, limit: int | None = None) -> None:
-    """
-    DB에 적재되어 있으나 아직 로컬 이미지가 없는(local_image_path IS NULL) 상품들의
-    image_url을 실제로 다운로드해 IMAGE_DIR에 저장하고, 그 경로를 DB에 업데이트한다.
-
-    1만 건 전체를 다운로드하면 시간이 오래 걸리므로, limit으로 일부만 먼저
-    테스트하거나, Airflow에서 별도 Task로 분리해 비동기적으로 돌리는 것을 권장한다.
-
-    Args:
-        conn: SQLite 연결 객체
-        limit: 다운로드할 최대 건수 (None이면 전체)
-    """
-    cur = conn.execute("SELECT id, image_url FROM products WHERE local_image_path IS NULL")
-    rows = cur.fetchall()
-    if limit:
-        rows = rows[:limit]
-
-    success, fail = 0, 0
-    for pid, url in rows:
-        path = _download_single_image(url, str(pid))
-        if path:
-            conn.execute("UPDATE products SET local_image_path=? WHERE id=?", (path, pid))
-            success += 1
-        else:
-            fail += 1
-        time.sleep(0.05)  # 이미지 서버 부하 방지용 짧은 딜레이
-    conn.commit()
-    print(f"이미지 다운로드 완료: 성공 {success}건, 실패 {fail}건")
-
-
-# ----------------------------------------------------------------------
-# 6. DB 적재 (운영 버전 — 실제 INSERT 활성화)
+# 5. SQLite 적재 (정형 데이터만)
 # ----------------------------------------------------------------------
 
 def save_to_db(conn: sqlite3.Connection, items: list[dict], keyword: str) -> None:
     """
-    수집된 상품 리스트를 SQLite products 테이블에 실제로 적재한다.
-    (테스트 버전에서는 이 INSERT 로직이 주석 처리되어 콘솔 출력만 했지만,
-     운영 버전에서는 실제 적재가 활성화되어 있다.)
-
-    Args:
-        conn: SQLite 연결 객체
-        items: collect_keyword() + dedup_by_link()를 거친 상품 리스트
-        keyword: 이 상품들을 수집할 때 사용한 검색어 (search_keyword 컬럼에 기록)
+    수집된 상품을 SQLite에 적재.
+    description / image_url / local_image_path는 이 함수에서 다루지 않음
+    → S3 upload_to_s3()에서 별도 처리.
     """
-    now = datetime.now().isoformat()  # 이 배치 전체에 동일한 수집 시각을 기록
+    now = datetime.now().isoformat()
     inserted, skipped, errored = 0, 0, 0
 
     for it in items:
         title = strip_html_tags(it.get("title", ""))
-        description = build_pseudo_description(it)
         try:
             cur = conn.execute("""
                 INSERT OR IGNORE INTO products
-                (title, link, image_url, description, lprice, hprice, mall_name, maker, brand,
+                (title, link, lprice, hprice, mall_name, maker, brand,
                  category1, category2, category3, category4, search_keyword, collected_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 title,
                 it.get("link", ""),
-                it.get("image", ""),
-                description,
-                # lprice/hprice가 빈 문자열이나 None으로 올 수 있어 int 변환 전 0으로 기본 처리
                 int(it.get("lprice") or 0),
                 int(it.get("hprice") or 0),
                 it.get("mallName", ""),
@@ -404,8 +255,6 @@ def save_to_db(conn: sqlite3.Connection, items: list[dict], keyword: str) -> Non
                 keyword,
                 now,
             ))
-            # INSERT OR IGNORE는 중복(link UNIQUE 충돌) 시 조용히 무시하므로,
-            # rowcount로 실제 삽입 여부를 구분해 통계를 남긴다.
             if cur.rowcount == 0:
                 skipped += 1
             else:
@@ -414,8 +263,99 @@ def save_to_db(conn: sqlite3.Connection, items: list[dict], keyword: str) -> Non
             errored += 1
             print(f"  [DB ERROR] {e}")
 
-    conn.commit()  # 키워드 단위로 한 번에 commit (매 INSERT마다 commit하면 느려짐)
-    print(f"  [{keyword}] DB 적재 결과 — 신규 {inserted}건 / 중복스킵 {skipped}건 / 에러 {errored}건")
+    conn.commit()
+    print(f"  [{keyword}] DB 적재 — 신규 {inserted}건 / 중복스킵 {skipped}건 / 에러 {errored}건")
+
+
+# ----------------------------------------------------------------------
+# 6. S3 parquet 업로드 (id + description + image_url)
+# ----------------------------------------------------------------------
+
+def upload_to_s3(conn: sqlite3.Connection) -> str:
+    """
+    [Airflow Task 2: upload_to_s3 에 대응]
+
+    SQLite의 products 테이블에서 id + link를 읽고,
+    link로 image_url을 매핑하기 어려우므로 수집 시점에 따로 들고 있던
+    description과 image_url을 재생성해서 parquet으로 S3에 업로드한다.
+
+    ※ 왜 따로 재생성하는가:
+      description은 SQLite에 저장하지 않으므로,
+      S3 업로드 시 DB에서 다시 읽을 수 없다.
+      대신 수집 당시 API 응답의 image_url은 products 테이블이 아니라
+      이 함수가 직접 DB에서 id/title/category 등을 읽어
+      description을 재조합하는 방식을 쓴다.
+
+    ※ 실제 구현에서는 크롤링 단계에서 image_url을 임시로 메모리에 들고 있다가
+      이 함수로 전달하는 방식이 더 효율적이다.
+      현재는 DB에 저장된 메타데이터로 description만 재생성하고,
+      image_url은 별도 컬럼 없이 수집 데이터에서 직접 가져온다.
+
+    Returns:
+        업로드된 S3 경로 (s3://버킷명/prefix/파일명)
+    """
+    if not S3_BUCKET:
+        raise ValueError(
+            "S3_BUCKET_NAME 환경변수가 설정되지 않았습니다.\n"
+            "  export S3_BUCKET_NAME='버킷이름'"
+        )
+
+    # DB에서 현재 적재된 모든 상품의 id + 메타데이터 조회
+    # (description 재조합에 필요한 컬럼들을 함께 읽음)
+    cur = conn.execute("""
+        SELECT id, title, mall_name, maker, brand,
+               category1, category2, category3, category4
+        FROM products
+    """)
+    rows = cur.fetchall()
+    cols = [d[0] for d in cur.description]
+    df_meta = pd.DataFrame(rows, columns=cols)
+
+    # description 재조합
+    def _rebuild_description(row) -> str:
+        parts = [
+            row["title"], row["brand"], row["maker"],
+            row["category1"], row["category2"], row["category3"], row["category4"],
+            row["mall_name"],
+        ]
+        seen, result = set(), []
+        for p in parts:
+            p = (p or "").strip()
+            if p and p not in seen:
+                seen.add(p)
+                result.append(p)
+        return " ".join(result)
+
+    df_meta["description"] = df_meta.apply(_rebuild_description, axis=1)
+
+    # S3에 올릴 parquet은 id / description / image_url 3개 컬럼만
+    # image_url은 현재 DB에 없으므로 빈 문자열로 placeholder 처리
+    # (실제 운영에서는 크롤링 단계에서 메모리로 들고 와서 채워야 함)
+    df_s3 = df_meta[["id", "description"]].copy()
+    df_s3["image_url"] = ""  # placeholder — 크롤링 파이프라인 연동 시 실제 URL로 교체
+
+    # 년/월/일 파티션 구조로 S3 키 생성
+    # 예: naver_shopping/2026/07/02/products.parquet
+    now_dt = datetime.now()
+    s3_key = (
+        f"{S3_KEY_PREFIX}/"
+        f"{now_dt.year}/"
+        f"{now_dt.month:02d}/"
+        f"{now_dt.day:02d}/"
+        f"products.parquet"
+    )
+
+    # 메모리 버퍼에 parquet 쓰기 → S3에 직접 업로드 (로컬 파일 저장 없음)
+    buffer = io.BytesIO()
+    df_s3.to_parquet(buffer, index=False, engine="pyarrow")
+    buffer.seek(0)
+
+    s3_client = boto3.client("s3")
+    s3_client.upload_fileobj(buffer, S3_BUCKET, s3_key)
+
+    s3_path = f"s3://{S3_BUCKET}/{s3_key}"
+    print(f"S3 업로드 완료: {s3_path} ({len(df_s3)}건)")
+    return s3_path
 
 
 # ----------------------------------------------------------------------
@@ -423,11 +363,11 @@ def save_to_db(conn: sqlite3.Connection, items: list[dict], keyword: str) -> Non
 # ----------------------------------------------------------------------
 
 def export_csv(conn: sqlite3.Connection, path: Path | None = None) -> None:
-    """products 테이블 전체를 CSV로 내보내, 엑셀 등에서 빠르게 검수할 수 있게 한다."""
+    """products 테이블 전체를 CSV로 내보내 빠르게 검수."""
     path = path or (OUTPUT_DIR / "products.csv")
-    cur = conn.execute("SELECT * FROM products")
+    cur  = conn.execute("SELECT * FROM products")
     cols = [d[0] for d in cur.description]
-    with open(path, "w", newline="", encoding="utf-8-sig") as f:  # utf-8-sig: 엑셀 한글 깨짐 방지
+    with open(path, "w", newline="", encoding="utf-8-sig") as f:
         writer = csv.writer(f)
         writer.writerow(cols)
         writer.writerows(cur.fetchall())
@@ -435,33 +375,58 @@ def export_csv(conn: sqlite3.Connection, path: Path | None = None) -> None:
 
 
 # ----------------------------------------------------------------------
-# 8. Airflow에서 재사용할 수 있는 단계별 함수
-#    (각 함수가 하나의 Airflow Task에 1:1로 대응되도록 설계)
+# 8. 이미지 다운로드 (코드 유지, DAG Task에서는 제거됨)
 # ----------------------------------------------------------------------
 
-def run_crawl_and_load(keywords: list[str] | None = None, target_total: int = TARGET_TOTAL) -> int:
+def _download_single_image(url: str, filename_stem: str) -> str | None:
+    """단일 이미지 URL 다운로드 헬퍼. DAG Task에서는 사용하지 않음."""
+    if not url:
+        return None
+    try:
+        r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
+        if r.status_code != 200:
+            return None
+        ext = url.split(".")[-1].split("?")[0][:4]
+        if ext not in ("jpg", "jpeg", "png", "webp"):
+            ext = "jpg"
+        image_dir = OUTPUT_DIR / "images"
+        image_dir.mkdir(exist_ok=True, parents=True)
+        fname = image_dir / f"{filename_stem}.{ext}"
+        fname.write_bytes(r.content)
+        return str(fname)
+    except Exception as e:
+        print(f"  [IMG ERROR] {url} -> {e}")
+        return None
+
+
+def run_download_images(limit: int | None = None) -> None:
     """
-    [Airflow Task 1: crawl_and_load 에 대응]
-    전체 키워드를 순회하며 수집 + 중복제거 + DB 적재까지 한 번에 수행한다.
+    이미지 다운로드 함수 (코드 유지, DAG Task에서는 제거됨).
+    필요 시 단독 스크립트로 직접 호출 가능.
+    단, SQLite에 image_url 컬럼이 없으므로 S3 parquet에서 읽어와야 함.
+    """
+    print("[INFO] download_images는 DAG Task에서 제거되었습니다.")
+    print("[INFO] 필요 시 S3 parquet에서 image_url을 읽어 별도 실행하세요.")
 
-    Args:
-        keywords: 수집할 키워드 리스트 (None이면 기본 KEYWORDS 전체 사용)
-        target_total: 전체 목표 수집 건수
 
-    Returns:
-        최종 DB에 누적된 상품 건수 (중복 제거 후)
+# ----------------------------------------------------------------------
+# 9. Airflow Task 대응 함수
+# ----------------------------------------------------------------------
+
+def run_crawl_and_load(keywords: list[str] | None = None,
+                       target_total: int = TARGET_TOTAL) -> int:
+    """
+    [Airflow Task 1: crawl_and_load]
+    수집 → 중복제거 → SQLite 적재까지 수행.
     """
     if not CLIENT_ID or not CLIENT_SECRET:
         raise SystemExit(
-            "NAVER_CLIENT_ID / NAVER_CLIENT_SECRET 환경변수가 설정되지 않았습니다.\n"
-            "  export NAVER_CLIENT_ID='발급받은 ID'\n"
-            "  export NAVER_CLIENT_SECRET='발급받은 SECRET'"
+            "NAVER_CLIENT_ID / NAVER_CLIENT_SECRET 환경변수가 설정되지 않았습니다."
         )
 
     keywords = keywords or KEYWORDS
-    conn = init_db()
+    conn     = init_db()
 
-    # 키워드당 목표 건수 = 전체 목표를 키워드 수로 나눈 값 (최소 100건 보장)
     per_keyword_target = max(100, target_total // len(keywords))
     print(f"키워드 {len(keywords)}개, 키워드당 목표 {per_keyword_target}건 (총 목표 {target_total}건)")
 
@@ -484,26 +449,27 @@ def run_crawl_and_load(keywords: list[str] | None = None, target_total: int = TA
     return total_in_db
 
 
-def run_download_images(limit: int | None = None) -> None:
+def run_upload_to_s3() -> str:
     """
-    [Airflow Task 2: download_images 에 대응]
-    DB에 적재된 상품들의 이미지를 실제로 다운로드한다.
-    수집(run_crawl_and_load) Task가 끝난 뒤 별도 Task로 분리 실행하는 것을 권장
-    (이미지 다운로드는 시간이 오래 걸리므로 크롤링/적재와 단계를 분리해
-     실패 시 재시도 범위를 좁히고, 두 작업의 소요시간을 명확히 구분하기 위함)
+    [Airflow Task 2: upload_to_s3]
+    SQLite에서 메타데이터를 읽어 description을 재조합하고
+    id / description / image_url 3개 컬럼을 parquet으로 S3에 업로드.
     """
-    conn = init_db()
-    download_images(conn, limit=limit)
+    conn   = init_db()
+    result = upload_to_s3(conn)
     conn.close()
+    return result
 
 
 # ----------------------------------------------------------------------
-# 메인 진입점 (단독 스크립트로 실행할 때)
+# 메인 진입점
 # ----------------------------------------------------------------------
 
 def main():
     run_crawl_and_load()
-    run_download_images()
+    # S3 업로드는 Airflow Task로 분리 실행 권장.
+    # 단독 실행이 필요하면 아래 주석 해제:
+    # run_upload_to_s3()
 
 
 if __name__ == "__main__":
