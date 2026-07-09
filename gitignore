@@ -99,4 +99,4 @@ dist/
 build/
 *.egg-info/
 .eggs/
-.bak
+*.bak

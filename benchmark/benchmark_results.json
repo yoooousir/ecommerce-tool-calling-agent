@@ -1,0 +1,67 @@
+[
+  {
+    "db": "ChromaDB",
+    "insert_throughput_vec_per_sec": 1262.6,
+    "insert_total_sec": 7.92,
+    "search_p50_ms": 4.38,
+    "search_p95_ms": 5.87,
+    "recall_at_10": 0.478,
+    "filtered_search_p50_ms": 24.6,
+    "filtered_search_p95_ms": 38.12,
+    "filter_slowdown_pct": 461.6,
+    "concurrent_qps": 553.6,
+    "estimated_monthly_cost_usd": 13.86,
+    "cost_breakdown": {
+      "required_ram_gb": 0.04,
+      "instance_type": "t4g.small",
+      "instance_hourly_usd": 0.0168,
+      "compute_cost_usd": 12.26,
+      "ebs_gb": 20,
+      "ebs_cost_usd": 1.6
+    }
+  },
+  {
+    "db": "Qdrant",
+    "insert_throughput_vec_per_sec": 1692.2,
+    "insert_total_sec": 5.91,
+    "search_p50_ms": 4.58,
+    "search_p95_ms": 6.77,
+    "recall_at_10": 1.0,
+    "filtered_search_p50_ms": 3.9,
+    "filtered_search_p95_ms": 4.99,
+    "filter_slowdown_pct": -14.8,
+    "concurrent_qps": 344.8,
+    "estimated_monthly_cost_usd": 13.86,
+    "cost_breakdown": {
+      "required_ram_gb": 0.04,
+      "instance_type": "t4g.small",
+      "instance_hourly_usd": 0.0168,
+      "compute_cost_usd": 12.26,
+      "ebs_gb": 20,
+      "ebs_cost_usd": 1.6
+    }
+  },
+  {
+    "db": "Pinecone",
+    "insert_throughput_vec_per_sec": 198.0,
+    "insert_total_sec": 50.5,
+    "search_p50_ms": 257.1,
+    "search_p95_ms": 311.11,
+    "recall_at_10": 0.998,
+    "filtered_search_p50_ms": 275.66,
+    "filtered_search_p95_ms": 311.61,
+    "filter_slowdown_pct": 7.2,
+    "concurrent_qps": 26.9,
+    "estimated_monthly_cost_usd": 50.0,
+    "cost_breakdown": {
+      "storage_gb": 0.021,
+      "storage_cost_usd": 0.01,
+      "write_units": 50000,
+      "write_cost_usd": 0.1,
+      "read_units": 25000.0,
+      "read_cost_usd": 0.21,
+      "usage_subtotal_usd": 0.31,
+      "monthly_minimum_applied": true
+    }
+  }
+]

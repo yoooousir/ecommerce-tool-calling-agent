@@ -4,23 +4,25 @@ collect_naver_shopping.py
 네이버 쇼핑 검색 오픈API를 이용해 상품 데이터를 수집하고,
 로컬 SQLite + AWS S3(parquet)에 적재하는 운영(production) 버전 스크립트.
 
-[v2 변경사항]
-  - description, image_url, local_image_path 3개 컬럼을 SQLite에서 제거
-    → 대신 S3에 parquet 파일(id, description, image_url)로 분리 저장
-  - upload_to_s3() 함수 추가 (Airflow Task 2에 대응)
-  - run_download_images() 코드는 유지하되 DAG Task에서는 제거됨
+[v3 변경사항 — image_url 실제값 채우기]
+  - 문제: v2에서는 image_url을 SQLite에 저장하지 않아서, upload_to_s3() 시점에
+    복구할 방법이 없어 항상 빈 문자열("") placeholder만 parquet에 들어갔음.
+  - 해결: products_media(id, image_url) 사이드 테이블을 새로 추가.
+    - products 테이블(정형 필터링 데이터)의 스키마/역할은 그대로 유지 (v2 설계 의도 보존)
+    - save_to_db()가 신규 삽입 시 image_url을 products_media에 같이 저장
+    - 중복이라 스킵된 기존 상품(link 기준)도 products_media에 값이 없으면 backfill
+    - upload_to_s3()는 이제 products_media를 join해서 실제 image_url을 parquet에 기록
 
-[데이터 분리 이유]
-  - SQLite: 조건 검색(가격/카테고리 필터링)에 쓰이는 정형 데이터만 담당
+[v2에서 이어지는 설계]
+  - SQLite: 조건 검색(가격/카테고리 필터링)에 쓰이는 정형 데이터만 담당 (products 테이블)
   - S3 parquet: 텍스트 임베딩용 description + 이미지 URL처럼 크기가 크거나
     벡터DB 파이프라인에서 직접 읽을 데이터를 분리해 저장
-    → SQLite 부담 감소, 나중에 임베딩 파이프라인이 S3에서 직접 읽어 처리 가능
 
 [데이터 흐름]
   네이버 검색 API
        ↓
-  collect_keyword() → dedup_by_link() → save_to_db() [SQLite, 정형 데이터만]
-                                      → upload_to_s3() [S3 parquet, id/desc/image_url]
+  collect_keyword() → dedup_by_link() → save_to_db() [SQLite: products + products_media]
+                                      → upload_to_s3() [S3 parquet: id/description/image_url]
 """
 
 import os
@@ -143,22 +145,24 @@ def dedup_by_link(all_items: list[dict]) -> list[dict]:
 
 
 # ----------------------------------------------------------------------
-# 3. SQLite 스키마 — description / image_url / local_image_path 제거
+# 3. SQLite 스키마
+#    - products: 정형 필터링 데이터 (v2 설계 그대로 유지)
+#    - products_media: image_url만 담는 사이드 테이블 (v3 신규)
 # ----------------------------------------------------------------------
 
 def init_db() -> sqlite3.Connection:
     """
-    SQLite 연결 및 products 테이블 생성 (없을 때만).
+    SQLite 연결 및 테이블 생성 (없을 때만).
 
-    [v2 스키마 변경]
-      제거된 컬럼:
-        - description      → S3 parquet으로 분리
-        - image_url        → S3 parquet으로 분리
-        - local_image_path → download_images Task 제거로 불필요
+    products 테이블 (v2와 동일, 변경 없음):
+      id, title, link, lprice, hprice, mall_name, maker, brand,
+      category1~4, search_keyword, collected_at
 
-      유지된 컬럼:
-        id, title, link, lprice, hprice, mall_name, maker, brand,
-        category1~4, search_keyword, collected_at
+    products_media 테이블 (v3 신규):
+      id           — products.id를 그대로 참조 (FK 역할, 별도 제약은 걸지 않음)
+      image_url    — 네이버 API 응답의 image 필드 원본 URL
+      이 테이블은 dbt source로 노출하지 않고, upload_to_s3()에서만 내부적으로 join해 사용.
+      → products 테이블은 여전히 "RDBMS 조건 검색용 정형 데이터만" 담는다는 v2 설계 유지.
     """
     OUTPUT_DIR.mkdir(exist_ok=True, parents=True)
     conn = sqlite3.connect(DB_PATH)
@@ -180,6 +184,12 @@ def init_db() -> sqlite3.Connection:
             collected_at     TEXT
         )
     """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS products_media (
+            id          INTEGER PRIMARY KEY,
+            image_url   TEXT
+        )
+    """)
     conn.commit()
     return conn
 
@@ -198,6 +208,7 @@ def build_pseudo_description(item: dict) -> str:
     title + brand + maker + category1~4 + mallName 조합으로
     텍스트 임베딩(벡터DB)용 의사 설명문 생성.
     SQLite에는 저장하지 않고 S3 parquet에만 포함된다.
+    (네이버 쇼핑 검색 API는 장문 description을 제공하지 않으므로 의사 설명문으로 대체)
     """
     title = strip_html_tags(item.get("title", ""))
     parts = [
@@ -220,20 +231,29 @@ def build_pseudo_description(item: dict) -> str:
 
 
 # ----------------------------------------------------------------------
-# 5. SQLite 적재 (정형 데이터만)
+# 5. SQLite 적재 (정형 데이터 + image_url 사이드 테이블)
 # ----------------------------------------------------------------------
 
 def save_to_db(conn: sqlite3.Connection, items: list[dict], keyword: str) -> None:
     """
     수집된 상품을 SQLite에 적재.
-    description / image_url / local_image_path는 이 함수에서 다루지 않음
-    → S3 upload_to_s3()에서 별도 처리.
+
+    [v3 변경]
+      - 신규 삽입된 상품은 products_media에 image_url도 함께 저장.
+      - link 중복으로 스킵된 기존 상품은, products_media에 image_url이
+        아직 없는 경우에만 backfill (덮어쓰지는 않음 — INSERT OR IGNORE).
+        이렇게 하면 v3 배포 이전에 수집돼서 media row가 없는 기존 데이터도
+        같은 상품이 재수집(중복 링크로 재수신)될 때 자동으로 채워짐.
     """
     now = datetime.now().isoformat()
     inserted, skipped, errored = 0, 0, 0
 
     for it in items:
         title = strip_html_tags(it.get("title", ""))
+        # 네이버 쇼핑 검색 API의 상품 이미지 URL 필드는 "image"
+        image_url = it.get("image", "")
+        link = it.get("link", "")
+
         try:
             cur = conn.execute("""
                 INSERT OR IGNORE INTO products
@@ -242,7 +262,7 @@ def save_to_db(conn: sqlite3.Connection, items: list[dict], keyword: str) -> Non
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 title,
-                it.get("link", ""),
+                link,
                 int(it.get("lprice") or 0),
                 int(it.get("hprice") or 0),
                 it.get("mallName", ""),
@@ -255,10 +275,26 @@ def save_to_db(conn: sqlite3.Connection, items: list[dict], keyword: str) -> Non
                 keyword,
                 now,
             ))
+
             if cur.rowcount == 0:
+                # link UNIQUE 제약으로 스킵된 경우 → 기존 상품의 id를 찾아
+                # products_media가 비어있으면 채워줌 (덮어쓰지 않음)
                 skipped += 1
+                existing = conn.execute(
+                    "SELECT id FROM products WHERE link = ?", (link,)
+                ).fetchone()
+                if existing and image_url:
+                    conn.execute(
+                        "INSERT OR IGNORE INTO products_media (id, image_url) VALUES (?, ?)",
+                        (existing[0], image_url),
+                    )
             else:
                 inserted += 1
+                new_id = cur.lastrowid
+                conn.execute(
+                    "INSERT OR IGNORE INTO products_media (id, image_url) VALUES (?, ?)",
+                    (new_id, image_url),
+                )
         except Exception as e:
             errored += 1
             print(f"  [DB ERROR] {e}")
@@ -275,21 +311,13 @@ def upload_to_s3(conn: sqlite3.Connection) -> str:
     """
     [Airflow Task 2: upload_to_s3 에 대응]
 
-    SQLite의 products 테이블에서 id + link를 읽고,
-    link로 image_url을 매핑하기 어려우므로 수집 시점에 따로 들고 있던
-    description과 image_url을 재생성해서 parquet으로 S3에 업로드한다.
+    products와 products_media를 id 기준으로 join해서
+    description(재조합) + image_url(실제 값)을 parquet으로 S3에 업로드.
 
-    ※ 왜 따로 재생성하는가:
-      description은 SQLite에 저장하지 않으므로,
-      S3 업로드 시 DB에서 다시 읽을 수 없다.
-      대신 수집 당시 API 응답의 image_url은 products 테이블이 아니라
-      이 함수가 직접 DB에서 id/title/category 등을 읽어
-      description을 재조합하는 방식을 쓴다.
-
-    ※ 실제 구현에서는 크롤링 단계에서 image_url을 임시로 메모리에 들고 있다가
-      이 함수로 전달하는 방식이 더 효율적이다.
-      현재는 DB에 저장된 메타데이터로 description만 재생성하고,
-      image_url은 별도 컬럼 없이 수집 데이터에서 직접 가져온다.
+    [v3 변경]
+      기존에는 image_url을 항상 빈 문자열("")로 채우는 placeholder였으나,
+      products_media 테이블에서 실제 저장된 image_url을 읽어와 채운다.
+      products_media에 값이 없는 경우(과거 데이터 등)에는 빈 문자열로 남는다.
 
     Returns:
         업로드된 S3 경로 (s3://버킷명/prefix/파일명)
@@ -300,18 +328,25 @@ def upload_to_s3(conn: sqlite3.Connection) -> str:
             "  export S3_BUCKET_NAME='버킷이름'"
         )
 
-    # DB에서 현재 적재된 모든 상품의 id + 메타데이터 조회
-    # (description 재조합에 필요한 컬럼들을 함께 읽음)
+    # products + products_media(image_url) join
     cur = conn.execute("""
-        SELECT id, title, mall_name, maker, brand,
-               category1, category2, category3, category4
-        FROM products
+        SELECT
+            p.id, p.title, p.mall_name, p.maker, p.brand,
+            p.category1, p.category2, p.category3, p.category4,
+            COALESCE(m.image_url, '') AS image_url
+        FROM products p
+        LEFT JOIN products_media m ON p.id = m.id
     """)
     rows = cur.fetchall()
     cols = [d[0] for d in cur.description]
     df_meta = pd.DataFrame(rows, columns=cols)
 
-    # description 재조합
+    missing_image = (df_meta["image_url"].fillna("").str.strip() == "").sum()
+    if missing_image:
+        print(f"  [INFO] image_url이 비어있는 상품 {missing_image}/{len(df_meta)}건 "
+              f"(v3 배포 이전 수집 데이터일 가능성)")
+
+    # description 재조합 (네이버 API에 장문 description이 없어 의사 설명문 생성)
     def _rebuild_description(row) -> str:
         parts = [
             row["title"], row["brand"], row["maker"],
@@ -328,11 +363,8 @@ def upload_to_s3(conn: sqlite3.Connection) -> str:
 
     df_meta["description"] = df_meta.apply(_rebuild_description, axis=1)
 
-    # S3에 올릴 parquet은 id / description / image_url 3개 컬럼만
-    # image_url은 현재 DB에 없으므로 빈 문자열로 placeholder 처리
-    # (실제 운영에서는 크롤링 단계에서 메모리로 들고 와서 채워야 함)
-    df_s3 = df_meta[["id", "description"]].copy()
-    df_s3["image_url"] = ""  # placeholder — 크롤링 파이프라인 연동 시 실제 URL로 교체
+    # S3에 올릴 parquet은 id / description / image_url 3개 컬럼
+    df_s3 = df_meta[["id", "description", "image_url"]].copy()
 
     # 년/월/일 파티션 구조로 S3 키 생성
     # 예: naver_shopping/2026/07/02/products.parquet
@@ -354,7 +386,7 @@ def upload_to_s3(conn: sqlite3.Connection) -> str:
     s3_client.upload_fileobj(buffer, S3_BUCKET, s3_key)
 
     s3_path = f"s3://{S3_BUCKET}/{s3_key}"
-    print(f"S3 업로드 완료: {s3_path} ({len(df_s3)}건)")
+    print(f"S3 업로드 완료: {s3_path} ({len(df_s3)}건, image_url 채움 {len(df_s3) - missing_image}건)")
     return s3_path
 
 
@@ -403,10 +435,10 @@ def run_download_images(limit: int | None = None) -> None:
     """
     이미지 다운로드 함수 (코드 유지, DAG Task에서는 제거됨).
     필요 시 단독 스크립트로 직접 호출 가능.
-    단, SQLite에 image_url 컬럼이 없으므로 S3 parquet에서 읽어와야 함.
+    v3부터는 products_media 테이블에서 image_url을 읽어올 수 있음.
     """
     print("[INFO] download_images는 DAG Task에서 제거되었습니다.")
-    print("[INFO] 필요 시 S3 parquet에서 image_url을 읽어 별도 실행하세요.")
+    print("[INFO] 필요 시 products_media 테이블에서 image_url을 읽어 별도 실행하세요.")
 
 
 # ----------------------------------------------------------------------
@@ -452,8 +484,8 @@ def run_crawl_and_load(keywords: list[str] | None = None,
 def run_upload_to_s3() -> str:
     """
     [Airflow Task 2: upload_to_s3]
-    SQLite에서 메타데이터를 읽어 description을 재조합하고
-    id / description / image_url 3개 컬럼을 parquet으로 S3에 업로드.
+    products + products_media를 join해 description/image_url을 채운 뒤
+    parquet으로 S3에 업로드.
     """
     conn   = init_db()
     result = upload_to_s3(conn)
