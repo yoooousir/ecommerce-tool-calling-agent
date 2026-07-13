@@ -347,15 +347,33 @@ def upload_to_s3(conn: sqlite3.Connection) -> str:
               f"(v3 배포 이전 수집 데이터일 가능성)")
 
     # description 재조합 (네이버 API에 장문 description이 없어 의사 설명문 생성)
+    # def _rebuild_description(row) -> str:
+    #     parts = [
+    #         row["title"], row["brand"], row["maker"],
+    #         row["category1"], row["category2"], row["category3"], row["category4"],
+    #         row["mall_name"],
+    #     ]
+    #     seen, result = set(), []
+    #     for p in parts:
+    #         p = (p or "").strip()
+    #         if p and p not in seen:
+    #             seen.add(p)
+    #             result.append(p)
+    #     return " ".join(result)
     def _rebuild_description(row) -> str:
         parts = [
-            row["title"], row["brand"], row["maker"],
-            row["category1"], row["category2"], row["category3"], row["category4"],
-            row["mall_name"],
+            row.get("title", ""), row.get("brand", ""), row.get("maker", ""),
+            row.get("category1", ""), row.get("category2", ""),
+            row.get("category3", ""), row.get("category4", ""),
+            row.get("mall_name", ""),
         ]
         seen, result = set(), []
         for p in parts:
-            p = (p or "").strip()
+            # 어떤 이유로든 p가 순수 문자열이 아닌 경우(중복 컬럼으로 인한 Series, None, NaN 등)
+            # 방어적으로 문자열로 강제 변환
+            if not isinstance(p, str):
+                p = "" if p is None or (isinstance(p, float) and pd.isna(p)) else str(p)
+            p = p.strip()
             if p and p not in seen:
                 seen.add(p)
                 result.append(p)

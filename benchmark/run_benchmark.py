@@ -9,20 +9,45 @@
   5. 동시 요청 처리량 (concurrent QPS, 10 workers)
 
 사용 예:
+  python run_benchmark.py --dbs chroma qdrant --n-vectors 10000
   python run_benchmark.py --dbs chroma qdrant pinecone --n-vectors 5000  # pinecone은 PINECONE_API_KEY 필요
 """
 
 import argparse
 import json
+import os
 import statistics
 import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, List
 
 import numpy as np
+from dotenv import find_dotenv, load_dotenv
 
 from cost_model import estimate_pinecone_cost, estimate_self_hosted_cost
 from dataset import generate_dataset, load_real_embeddings
+
+
+def load_env_file(explicit_path: str = None):
+    """
+    .env 파일을 로드해 환경변수로 등록.
+    - explicit_path가 있으면 그걸 우선 사용 (예: ../airflow/.env 처럼 형제 폴더에 있는 경우)
+    - 없으면 현재 폴더부터 상위 폴더로 올라가며 자동 탐색 (find_dotenv)
+    """
+    if explicit_path:
+        if not os.path.isfile(explicit_path):
+            print(f"[경고] 지정한 --env-file 경로를 찾을 수 없음: {explicit_path}")
+            return
+        load_dotenv(explicit_path)
+        print(f"[.env 로드됨: {explicit_path}]")
+        return
+
+    found = find_dotenv(usecwd=True)
+    if found:
+        load_dotenv(found)
+        print(f"[.env 로드됨: {found}]")
+    else:
+        print("[.env 파일을 찾지 못함 — --env-file로 직접 지정하거나 환경변수를 셸에 미리 설정해야 함]")
 
 
 def compute_ground_truth(vectors: np.ndarray, query_vectors: np.ndarray, top_k: int = 10) -> List[List[int]]:
@@ -153,7 +178,14 @@ def main():
         default=200,
         help="레코드당 평균 메타데이터 크기(바이트). 상품명/가격/브랜드 등 payload 크기",
     )
+    parser.add_argument(
+        "--env-file",
+        default=None,
+        help="PINECONE_API_KEY 등이 담긴 .env 경로. 예: ../airflow/.env (지정 안 하면 자동 탐색)",
+    )
     args = parser.parse_args()
+
+    load_env_file(args.env_file)
 
     if args.real_embeddings_npz:
         dataset = load_real_embeddings(args.real_embeddings_npz)

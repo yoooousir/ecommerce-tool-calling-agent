@@ -9995,3 +9995,753 @@ having count(*) > 1
 [0m07:43:51.198503 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7172188ef790>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7172143c1dd0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x717218868210>]}
 [0m07:43:51.199023 [debug] [MainThread]: Flushing usage events
 [0m07:43:52.729738 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m01:21:45.427038 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e3aca26d810>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e3aca26d0d0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e3aca26c810>]}
+
+
+============================== 01:21:45.438823 | 28bd7aa3-49f4-4151-b200-017b664f8db9 ==============================
+[0m01:21:45.438823 [info ] [MainThread]: Running with dbt=1.9.0
+[0m01:21:45.439923 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'write_json': 'True', 'log_cache_events': 'False', 'partial_parse': 'True', 'cache_selected_only': 'False', 'warn_error': 'None', 'debug': 'False', 'version_check': 'True', 'log_path': '/opt/airflow/dbt/naver_shop/logs', 'fail_fast': 'False', 'profiles_dir': '/opt/airflow/dbt/naver_shop', 'use_colors': 'True', 'use_experimental_parser': 'False', 'empty': 'False', 'quiet': 'False', 'no_print': 'None', 'log_format': 'default', 'static_parser': 'True', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'invocation_command': 'dbt run --project-dir /opt/airflow/dbt/naver_shop --profiles-dir /opt/airflow/dbt/naver_shop', 'target_path': 'None', 'introspect': 'True', 'send_anonymous_usage_stats': 'True'}
+[0m01:21:45.816201 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': '28bd7aa3-49f4-4151-b200-017b664f8db9', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e3aca0a5090>]}
+[0m01:21:45.962704 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'adapter_info', 'label': '28bd7aa3-49f4-4151-b200-017b664f8db9', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e3acafa3650>]}
+[0m01:21:45.965136 [info ] [MainThread]: Registered adapter: sqlite=1.9.1
+[0m01:21:46.078855 [debug] [MainThread]: checksum: c99e828bba267739642b5a3ce85f17518764ea526e0e6c4fdc649171c1a66bff, vars: {}, profile: , target: , version: 1.9.0
+[0m01:21:46.324400 [debug] [MainThread]: Partial parsing enabled: 0 files deleted, 0 files added, 0 files changed.
+[0m01:21:46.324994 [debug] [MainThread]: Partial parsing enabled, no changes found, skipping parsing
+[0m01:21:46.393471 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'load_project', 'label': '28bd7aa3-49f4-4151-b200-017b664f8db9', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e3ac9b40f10>]}
+[0m01:21:46.503433 [debug] [MainThread]: Wrote artifact WritableManifest to /opt/airflow/dbt/naver_shop/target/manifest.json
+[0m01:21:46.510544 [debug] [MainThread]: Wrote artifact SemanticManifest to /opt/airflow/dbt/naver_shop/target/semantic_manifest.json
+[0m01:21:46.578754 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'resource_counts', 'label': '28bd7aa3-49f4-4151-b200-017b664f8db9', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e3ac9a52f10>]}
+[0m01:21:46.580189 [info ] [MainThread]: Found 3 models, 8 data tests, 1 source, 413 macros
+[0m01:21:46.581128 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': '28bd7aa3-49f4-4151-b200-017b664f8db9', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e3aca602bd0>]}
+[0m01:21:46.587391 [info ] [MainThread]: 
+[0m01:21:46.589775 [info ] [MainThread]: Concurrency: 1 threads (target='dev')
+[0m01:21:46.590789 [info ] [MainThread]: 
+[0m01:21:46.591873 [debug] [MainThread]: Acquiring new sqlite connection 'master'
+[0m01:21:46.608195 [debug] [ThreadPool]: Acquiring new sqlite connection 'list_database'
+[0m01:21:46.806313 [debug] [ThreadPool]: Using sqlite connection "list_database"
+[0m01:21:46.807089 [debug] [ThreadPool]: On list_database: BEGIN
+[0m01:21:46.807826 [debug] [ThreadPool]: Opening a new connection, currently in state init
+[0m01:21:46.810245 [debug] [ThreadPool]: SQL status: OK in 0.002 seconds
+[0m01:21:46.811037 [debug] [ThreadPool]: Using sqlite connection "list_database"
+[0m01:21:46.811597 [debug] [ThreadPool]: On list_database: /* {"app": "dbt", "dbt_version": "1.9.0", "profile_name": "naver_shop", "target_name": "dev", "connection_name": "list_database"} */
+
+        pragma database_list
+    
+[0m01:21:46.812109 [debug] [ThreadPool]: SQL status: OK in 0.000 seconds
+[0m01:21:46.813802 [debug] [ThreadPool]: On list_database: ROLLBACK
+[0m01:21:46.814454 [debug] [ThreadPool]: On list_database: Close
+[0m01:21:46.816497 [debug] [ThreadPool]: Re-using an available connection from the pool (formerly list_database, now list_database_main)
+[0m01:21:46.826725 [debug] [ThreadPool]: Using sqlite connection "list_database_main"
+[0m01:21:46.827350 [debug] [ThreadPool]: On list_database_main: BEGIN
+[0m01:21:46.827860 [debug] [ThreadPool]: Opening a new connection, currently in state closed
+[0m01:21:46.828925 [debug] [ThreadPool]: SQL status: OK in 0.001 seconds
+[0m01:21:46.829389 [debug] [ThreadPool]: Using sqlite connection "list_database_main"
+[0m01:21:46.829835 [debug] [ThreadPool]: On list_database_main: /* {"app": "dbt", "dbt_version": "1.9.0", "profile_name": "naver_shop", "target_name": "dev", "connection_name": "list_database_main"} */
+
+        pragma database_list
+    
+[0m01:21:46.830434 [debug] [ThreadPool]: SQL status: OK in 0.000 seconds
+[0m01:21:46.832221 [debug] [ThreadPool]: Using sqlite connection "list_database_main"
+[0m01:21:46.832770 [debug] [ThreadPool]: On list_database_main: /* {"app": "dbt", "dbt_version": "1.9.0", "profile_name": "naver_shop", "target_name": "dev", "connection_name": "list_database_main"} */
+
+            SELECT
+                'database' as database
+                ,name
+                ,'main' AS schema
+                ,type as data_type
+            FROM
+                main.sqlite_master
+            WHERE
+                name NOT LIKE 'sqlite_%'
+        
+[0m01:21:46.834746 [debug] [ThreadPool]: SQL status: OK in 0.000 seconds
+[0m01:21:46.837227 [debug] [ThreadPool]: On list_database_main: ROLLBACK
+[0m01:21:46.838085 [debug] [ThreadPool]: On list_database_main: Close
+[0m01:21:46.840188 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': '28bd7aa3-49f4-4151-b200-017b664f8db9', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e3aca602bd0>]}
+[0m01:21:46.840947 [debug] [MainThread]: Using sqlite connection "master"
+[0m01:21:46.841402 [debug] [MainThread]: On master: BEGIN
+[0m01:21:46.841927 [debug] [MainThread]: Opening a new connection, currently in state init
+[0m01:21:46.843875 [debug] [MainThread]: SQL status: OK in 0.002 seconds
+[0m01:21:46.844703 [debug] [MainThread]: On master: COMMIT
+[0m01:21:46.845400 [debug] [MainThread]: Using sqlite connection "master"
+[0m01:21:46.846015 [debug] [MainThread]: On master: COMMIT
+[0m01:21:46.846774 [debug] [MainThread]: SQL status: OK in 0.000 seconds
+[0m01:21:46.847365 [debug] [MainThread]: On master: Close
+[0m01:21:46.853217 [debug] [Thread-1 (]: Began running node model.naver_shop.stg_products
+[0m01:21:46.854486 [info ] [Thread-1 (]: 1 of 3 START sql view model main.stg_products .................................. [RUN]
+[0m01:21:46.855606 [debug] [Thread-1 (]: Re-using an available connection from the pool (formerly list_database_main, now model.naver_shop.stg_products)
+[0m01:21:46.856467 [debug] [Thread-1 (]: Began compiling node model.naver_shop.stg_products
+[0m01:21:46.874438 [debug] [Thread-1 (]: Writing injected SQL for node "model.naver_shop.stg_products"
+[0m01:21:46.881323 [debug] [Thread-1 (]: Began executing node model.naver_shop.stg_products
+[0m01:21:46.927733 [debug] [Thread-1 (]: Using sqlite connection "model.naver_shop.stg_products"
+[0m01:21:46.937907 [debug] [Thread-1 (]: On model.naver_shop.stg_products: /* {"app": "dbt", "dbt_version": "1.9.0", "profile_name": "naver_shop", "target_name": "dev", "node_id": "model.naver_shop.stg_products"} */
+drop view if exists "main"."stg_products"
+[0m01:21:46.938919 [debug] [Thread-1 (]: Opening a new connection, currently in state closed
+[0m01:21:46.951700 [debug] [Thread-1 (]: SQL status: OK in 0.013 seconds
+[0m01:21:46.957350 [debug] [Thread-1 (]: Writing runtime sql for node "model.naver_shop.stg_products"
+[0m01:21:46.958631 [debug] [Thread-1 (]: Using sqlite connection "model.naver_shop.stg_products"
+[0m01:21:46.959301 [debug] [Thread-1 (]: On model.naver_shop.stg_products: BEGIN
+[0m01:21:46.959814 [debug] [Thread-1 (]: SQL status: OK in 0.000 seconds
+[0m01:21:46.960270 [debug] [Thread-1 (]: Using sqlite connection "model.naver_shop.stg_products"
+[0m01:21:46.960790 [debug] [Thread-1 (]: On model.naver_shop.stg_products: /* {"app": "dbt", "dbt_version": "1.9.0", "profile_name": "naver_shop", "target_name": "dev", "node_id": "model.naver_shop.stg_products"} */
+
+    
+    create view main."stg_products" as
+    -- stg_products.sql (v2)
+-- ============================================================
+-- staging 레이어: raw products 테이블 1차 정제.
+--
+-- [v2 변경사항]
+--   제거된 컬럼:
+--     - description      → S3 parquet으로 분리
+--     - image_url        → S3 parquet으로 분리
+--     - local_image_path → download_images Task 제거로 불필요
+--
+-- 남은 컬럼은 모두 RDBMS 조건 검색(가격/카테고리 필터링)에
+-- 직접 사용되는 정형 데이터이다.
+-- ============================================================
+
+with source as (
+
+    select * from main."products"
+
+),
+
+cleaned as (
+
+    select
+        id                              as product_id,
+        trim(title)                     as title,
+        link,
+        lprice                          as low_price,
+        hprice                          as high_price,
+        trim(mall_name)                 as mall_name,
+        trim(maker)                     as maker,
+        trim(brand)                     as brand,
+        trim(category1)                 as category_l1,
+        trim(category2)                 as category_l2,
+        trim(category3)                 as category_l3,
+        trim(category4)                 as category_l4,
+        search_keyword,
+        collected_at
+
+    from source
+    -- 가격이 0 이하이거나 제목이 비어있는 비정상 행 제외
+    where lprice > 0
+      and title is not null
+      and trim(title) != ''
+
+)
+
+select * from cleaned;
+[0m01:21:46.962313 [debug] [Thread-1 (]: SQL status: OK in 0.001 seconds
+[0m01:21:46.968401 [debug] [Thread-1 (]: On model.naver_shop.stg_products: COMMIT
+[0m01:21:46.969002 [debug] [Thread-1 (]: Using sqlite connection "model.naver_shop.stg_products"
+[0m01:21:46.969446 [debug] [Thread-1 (]: On model.naver_shop.stg_products: COMMIT
+[0m01:21:46.974317 [debug] [Thread-1 (]: SQL status: OK in 0.004 seconds
+[0m01:21:46.977488 [debug] [Thread-1 (]: On model.naver_shop.stg_products: Close
+[0m01:21:46.980158 [debug] [Thread-1 (]: Sending event: {'category': 'dbt', 'action': 'run_model', 'label': '28bd7aa3-49f4-4151-b200-017b664f8db9', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e3ac9ada7d0>]}
+[0m01:21:46.981122 [info ] [Thread-1 (]: 1 of 3 OK created sql view model main.stg_products ............................. [[32mOK[0m in 0.12s]
+[0m01:21:46.981964 [debug] [Thread-1 (]: Finished running node model.naver_shop.stg_products
+[0m01:21:46.983270 [debug] [Thread-1 (]: Began running node model.naver_shop.dim_products
+[0m01:21:46.984066 [info ] [Thread-1 (]: 2 of 3 START sql table model main.dim_products ................................. [RUN]
+[0m01:21:46.984721 [debug] [Thread-1 (]: Re-using an available connection from the pool (formerly model.naver_shop.stg_products, now model.naver_shop.dim_products)
+[0m01:21:46.985285 [debug] [Thread-1 (]: Began compiling node model.naver_shop.dim_products
+[0m01:21:46.992919 [debug] [Thread-1 (]: Writing injected SQL for node "model.naver_shop.dim_products"
+[0m01:21:46.994246 [debug] [Thread-1 (]: Began executing node model.naver_shop.dim_products
+[0m01:21:47.010391 [debug] [Thread-1 (]: Using sqlite connection "model.naver_shop.dim_products"
+[0m01:21:47.011318 [debug] [Thread-1 (]: On model.naver_shop.dim_products: /* {"app": "dbt", "dbt_version": "1.9.0", "profile_name": "naver_shop", "target_name": "dev", "node_id": "model.naver_shop.dim_products"} */
+drop table if exists "main"."dim_products"
+[0m01:21:47.012056 [debug] [Thread-1 (]: Opening a new connection, currently in state closed
+[0m01:21:47.170535 [debug] [Thread-1 (]: SQL status: OK in 0.158 seconds
+[0m01:21:47.176817 [debug] [Thread-1 (]: Writing runtime sql for node "model.naver_shop.dim_products"
+[0m01:21:47.177980 [debug] [Thread-1 (]: Using sqlite connection "model.naver_shop.dim_products"
+[0m01:21:47.178561 [debug] [Thread-1 (]: On model.naver_shop.dim_products: BEGIN
+[0m01:21:47.179104 [debug] [Thread-1 (]: SQL status: OK in 0.000 seconds
+[0m01:21:47.179564 [debug] [Thread-1 (]: Using sqlite connection "model.naver_shop.dim_products"
+[0m01:21:47.180044 [debug] [Thread-1 (]: On model.naver_shop.dim_products: /* {"app": "dbt", "dbt_version": "1.9.0", "profile_name": "naver_shop", "target_name": "dev", "node_id": "model.naver_shop.dim_products"} */
+
+  
+    
+    
+    create  table main."dim_products"
+    as
+        -- dim_products.sql (v2)
+-- ============================================================
+-- marts 레이어: 에이전트의 RDBMS 조건 검색 대상 최종 상품 카탈로그.
+--
+-- [v2 변경사항]
+--   제거된 컬럼:
+--     - description      → S3 parquet에만 존재
+--     - image_url        → S3 parquet에만 존재
+--     - local_image_path → 불필요
+--     - has_image        → image_url이 없으므로 판단 불가, 제거
+--
+--   유지된 비즈니스 로직:
+--     - price_bucket: budget / mid / premium 구간화
+--     - category_path: 카테고리 4단계를 하나의 경로 문자열로 결합
+-- ============================================================
+
+with stg as (
+
+    select * from main."stg_products"
+
+),
+
+final as (
+
+    select
+        product_id,
+        title,
+        link,
+        low_price,
+        high_price,
+        mall_name,
+        maker,
+        brand,
+
+        -- 카테고리 4단계 경로 결합 (빈 하위 카테고리 자동 생략)
+        trim(
+            category_l1 ||
+            case when category_l2 != '' then ' > ' || category_l2 else '' end ||
+            case when category_l3 != '' then ' > ' || category_l3 else '' end ||
+            case when category_l4 != '' then ' > ' || category_l4 else '' end
+        ) as category_path,
+
+        category_l1,
+        category_l2,
+
+        -- 가격 구간화 (에이전트의 모호한 가격 표현 처리용)
+        case
+            when low_price < 30000  then 'budget'   -- 3만원 미만
+            when low_price < 100000 then 'mid'       -- 3만~10만원
+            else                         'premium'   -- 10만원 이상
+        end as price_bucket,
+
+        search_keyword,
+        collected_at
+
+    from stg
+
+)
+
+select * from final
+
+  
+[0m01:21:47.301563 [debug] [Thread-1 (]: SQL status: OK in 0.121 seconds
+[0m01:21:47.303473 [debug] [Thread-1 (]: On model.naver_shop.dim_products: COMMIT
+[0m01:21:47.304025 [debug] [Thread-1 (]: Using sqlite connection "model.naver_shop.dim_products"
+[0m01:21:47.304481 [debug] [Thread-1 (]: On model.naver_shop.dim_products: COMMIT
+[0m01:21:47.315309 [debug] [Thread-1 (]: SQL status: OK in 0.010 seconds
+[0m01:21:47.316561 [debug] [Thread-1 (]: On model.naver_shop.dim_products: Close
+[0m01:21:47.317461 [debug] [Thread-1 (]: Sending event: {'category': 'dbt', 'action': 'run_model', 'label': '28bd7aa3-49f4-4151-b200-017b664f8db9', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e3ac9010590>]}
+[0m01:21:47.318292 [info ] [Thread-1 (]: 2 of 3 OK created sql table model main.dim_products ............................ [[32mOK[0m in 0.33s]
+[0m01:21:47.319039 [debug] [Thread-1 (]: Finished running node model.naver_shop.dim_products
+[0m01:21:47.320283 [debug] [Thread-1 (]: Began running node model.naver_shop.category_summary
+[0m01:21:47.321036 [info ] [Thread-1 (]: 3 of 3 START sql table model main.category_summary ............................. [RUN]
+[0m01:21:47.321744 [debug] [Thread-1 (]: Re-using an available connection from the pool (formerly model.naver_shop.dim_products, now model.naver_shop.category_summary)
+[0m01:21:47.322286 [debug] [Thread-1 (]: Began compiling node model.naver_shop.category_summary
+[0m01:21:47.326441 [debug] [Thread-1 (]: Writing injected SQL for node "model.naver_shop.category_summary"
+[0m01:21:47.327343 [debug] [Thread-1 (]: Began executing node model.naver_shop.category_summary
+[0m01:21:47.344051 [debug] [Thread-1 (]: Using sqlite connection "model.naver_shop.category_summary"
+[0m01:21:47.344940 [debug] [Thread-1 (]: On model.naver_shop.category_summary: /* {"app": "dbt", "dbt_version": "1.9.0", "profile_name": "naver_shop", "target_name": "dev", "node_id": "model.naver_shop.category_summary"} */
+drop table if exists "main"."category_summary"
+[0m01:21:47.345751 [debug] [Thread-1 (]: Opening a new connection, currently in state closed
+[0m01:21:47.363659 [debug] [Thread-1 (]: SQL status: OK in 0.018 seconds
+[0m01:21:47.366691 [debug] [Thread-1 (]: Writing runtime sql for node "model.naver_shop.category_summary"
+[0m01:21:47.368474 [debug] [Thread-1 (]: Using sqlite connection "model.naver_shop.category_summary"
+[0m01:21:47.369720 [debug] [Thread-1 (]: On model.naver_shop.category_summary: BEGIN
+[0m01:21:47.375894 [debug] [Thread-1 (]: SQL status: OK in 0.000 seconds
+[0m01:21:47.376891 [debug] [Thread-1 (]: Using sqlite connection "model.naver_shop.category_summary"
+[0m01:21:47.377856 [debug] [Thread-1 (]: On model.naver_shop.category_summary: /* {"app": "dbt", "dbt_version": "1.9.0", "profile_name": "naver_shop", "target_name": "dev", "node_id": "model.naver_shop.category_summary"} */
+
+  
+    
+    
+    create  table main."category_summary"
+    as
+        -- category_summary.sql (v2)
+-- ============================================================
+-- marts 레이어: 카테고리별 수집 현황 요약.
+--
+-- [v2 변경사항]
+--   제거: image_downloaded_count, image_coverage_pct
+--   (has_image 컬럼이 dim_products에서 제거되어 집계 불가)
+-- ============================================================
+
+with products as (
+
+    select * from main."dim_products"
+
+),
+
+summary as (
+
+    select
+        category_l1,
+        count(*)                   as product_count,
+        round(avg(low_price), 0)   as avg_low_price,
+        min(low_price)             as min_price,
+        max(low_price)             as max_price
+
+    from products
+    group by category_l1
+
+)
+
+select * from summary
+order by product_count desc
+
+  
+[0m01:21:47.394189 [debug] [Thread-1 (]: SQL status: OK in 0.015 seconds
+[0m01:21:47.396778 [debug] [Thread-1 (]: On model.naver_shop.category_summary: COMMIT
+[0m01:21:47.397661 [debug] [Thread-1 (]: Using sqlite connection "model.naver_shop.category_summary"
+[0m01:21:47.398427 [debug] [Thread-1 (]: On model.naver_shop.category_summary: COMMIT
+[0m01:21:47.411886 [debug] [Thread-1 (]: SQL status: OK in 0.013 seconds
+[0m01:21:47.413256 [debug] [Thread-1 (]: On model.naver_shop.category_summary: Close
+[0m01:21:47.414310 [debug] [Thread-1 (]: Sending event: {'category': 'dbt', 'action': 'run_model', 'label': '28bd7aa3-49f4-4151-b200-017b664f8db9', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e3ac8f10b90>]}
+[0m01:21:47.415247 [info ] [Thread-1 (]: 3 of 3 OK created sql table model main.category_summary ........................ [[32mOK[0m in 0.09s]
+[0m01:21:47.415969 [debug] [Thread-1 (]: Finished running node model.naver_shop.category_summary
+[0m01:21:47.418281 [debug] [MainThread]: Using sqlite connection "master"
+[0m01:21:47.418823 [debug] [MainThread]: On master: BEGIN
+[0m01:21:47.419233 [debug] [MainThread]: Opening a new connection, currently in state closed
+[0m01:21:47.420396 [debug] [MainThread]: SQL status: OK in 0.001 seconds
+[0m01:21:47.420867 [debug] [MainThread]: On master: COMMIT
+[0m01:21:47.421412 [debug] [MainThread]: Using sqlite connection "master"
+[0m01:21:47.421772 [debug] [MainThread]: On master: COMMIT
+[0m01:21:47.422228 [debug] [MainThread]: SQL status: OK in 0.000 seconds
+[0m01:21:47.422676 [debug] [MainThread]: On master: Close
+[0m01:21:47.423384 [debug] [MainThread]: Connection 'master' was properly closed.
+[0m01:21:47.423756 [debug] [MainThread]: Connection 'model.naver_shop.category_summary' was properly closed.
+[0m01:21:47.424189 [info ] [MainThread]: 
+[0m01:21:47.424630 [info ] [MainThread]: Finished running 2 table models, 1 view model in 0 hours 0 minutes and 0.83 seconds (0.83s).
+[0m01:21:47.425598 [debug] [MainThread]: Command end result
+[0m01:21:47.449875 [debug] [MainThread]: Wrote artifact WritableManifest to /opt/airflow/dbt/naver_shop/target/manifest.json
+[0m01:21:47.452117 [debug] [MainThread]: Wrote artifact SemanticManifest to /opt/airflow/dbt/naver_shop/target/semantic_manifest.json
+[0m01:21:47.458722 [debug] [MainThread]: Wrote artifact RunExecutionResult to /opt/airflow/dbt/naver_shop/target/run_results.json
+[0m01:21:47.459276 [info ] [MainThread]: 
+[0m01:21:47.459837 [info ] [MainThread]: [32mCompleted successfully[0m
+[0m01:21:47.460299 [info ] [MainThread]: 
+[0m01:21:47.460783 [info ] [MainThread]: Done. PASS=3 WARN=0 ERROR=0 SKIP=0 TOTAL=3
+[0m01:21:47.462967 [debug] [MainThread]: Resource report: {"command_name": "run", "command_success": true, "command_wall_clock_time": 2.12319, "process_in_blocks": "99144", "process_kernel_time": 2.500856, "process_mem_max_rss": "115176", "process_out_blocks": "28384", "process_user_time": 4.615333}
+[0m01:21:47.463657 [debug] [MainThread]: Command `dbt run` succeeded at 01:21:47.463533 after 2.12 seconds
+[0m01:21:47.464138 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e3aca4688d0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e3aca468d50>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7e3acddfdc90>]}
+[0m01:21:47.464593 [debug] [MainThread]: Flushing usage events
+[0m01:21:48.524810 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m01:21:54.660160 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7bce28a09bd0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7bce2969f190>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7bce28c28c90>]}
+
+
+============================== 01:21:54.671625 | 61cbd458-102f-4f3d-a396-25f55b10b253 ==============================
+[0m01:21:54.671625 [info ] [MainThread]: Running with dbt=1.9.0
+[0m01:21:54.672766 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'write_json': 'True', 'log_cache_events': 'False', 'partial_parse': 'True', 'cache_selected_only': 'False', 'warn_error': 'None', 'debug': 'False', 'version_check': 'True', 'log_path': '/opt/airflow/dbt/naver_shop/logs', 'profiles_dir': '/opt/airflow/dbt/naver_shop', 'fail_fast': 'False', 'use_colors': 'True', 'use_experimental_parser': 'False', 'no_print': 'None', 'quiet': 'False', 'empty': 'None', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'introspect': 'True', 'static_parser': 'True', 'invocation_command': 'dbt test --project-dir /opt/airflow/dbt/naver_shop --profiles-dir /opt/airflow/dbt/naver_shop', 'target_path': 'None', 'log_format': 'default', 'send_anonymous_usage_stats': 'True'}
+[0m01:21:54.867910 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': '61cbd458-102f-4f3d-a396-25f55b10b253', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7bce28853390>]}
+[0m01:21:54.940674 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'adapter_info', 'label': '61cbd458-102f-4f3d-a396-25f55b10b253', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7bce28f4b990>]}
+[0m01:21:54.942002 [info ] [MainThread]: Registered adapter: sqlite=1.9.1
+[0m01:21:55.044400 [debug] [MainThread]: checksum: c99e828bba267739642b5a3ce85f17518764ea526e0e6c4fdc649171c1a66bff, vars: {}, profile: , target: , version: 1.9.0
+[0m01:21:55.191049 [debug] [MainThread]: Partial parsing enabled: 0 files deleted, 0 files added, 0 files changed.
+[0m01:21:55.191634 [debug] [MainThread]: Partial parsing enabled, no changes found, skipping parsing
+[0m01:21:55.259050 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'load_project', 'label': '61cbd458-102f-4f3d-a396-25f55b10b253', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7bce28442610>]}
+[0m01:21:55.363767 [debug] [MainThread]: Wrote artifact WritableManifest to /opt/airflow/dbt/naver_shop/target/manifest.json
+[0m01:21:55.371302 [debug] [MainThread]: Wrote artifact SemanticManifest to /opt/airflow/dbt/naver_shop/target/semantic_manifest.json
+[0m01:21:55.411500 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'resource_counts', 'label': '61cbd458-102f-4f3d-a396-25f55b10b253', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7bce2813ec50>]}
+[0m01:21:55.412295 [info ] [MainThread]: Found 3 models, 8 data tests, 1 source, 413 macros
+[0m01:21:55.413067 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': '61cbd458-102f-4f3d-a396-25f55b10b253', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7bce285a7b90>]}
+[0m01:21:55.416047 [info ] [MainThread]: 
+[0m01:21:55.416698 [info ] [MainThread]: Concurrency: 1 threads (target='dev')
+[0m01:21:55.417370 [info ] [MainThread]: 
+[0m01:21:55.418440 [debug] [MainThread]: Acquiring new sqlite connection 'master'
+[0m01:21:55.425111 [debug] [ThreadPool]: Acquiring new sqlite connection 'list_database_main'
+[0m01:21:55.479735 [debug] [ThreadPool]: Using sqlite connection "list_database_main"
+[0m01:21:55.480346 [debug] [ThreadPool]: On list_database_main: BEGIN
+[0m01:21:55.480818 [debug] [ThreadPool]: Opening a new connection, currently in state init
+[0m01:21:55.482081 [debug] [ThreadPool]: SQL status: OK in 0.001 seconds
+[0m01:21:55.482640 [debug] [ThreadPool]: Using sqlite connection "list_database_main"
+[0m01:21:55.483076 [debug] [ThreadPool]: On list_database_main: /* {"app": "dbt", "dbt_version": "1.9.0", "profile_name": "naver_shop", "target_name": "dev", "connection_name": "list_database_main"} */
+
+        pragma database_list
+    
+[0m01:21:55.483516 [debug] [ThreadPool]: SQL status: OK in 0.000 seconds
+[0m01:21:55.485149 [debug] [ThreadPool]: Using sqlite connection "list_database_main"
+[0m01:21:55.485621 [debug] [ThreadPool]: On list_database_main: /* {"app": "dbt", "dbt_version": "1.9.0", "profile_name": "naver_shop", "target_name": "dev", "connection_name": "list_database_main"} */
+
+            SELECT
+                'database' as database
+                ,name
+                ,'main' AS schema
+                ,type as data_type
+            FROM
+                main.sqlite_master
+            WHERE
+                name NOT LIKE 'sqlite_%'
+        
+[0m01:21:55.486215 [debug] [ThreadPool]: SQL status: OK in 0.000 seconds
+[0m01:21:55.487654 [debug] [ThreadPool]: On list_database_main: ROLLBACK
+[0m01:21:55.488149 [debug] [ThreadPool]: On list_database_main: Close
+[0m01:21:55.490199 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': '61cbd458-102f-4f3d-a396-25f55b10b253', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7bce28569890>]}
+[0m01:21:55.491161 [debug] [MainThread]: Using sqlite connection "master"
+[0m01:21:55.491616 [debug] [MainThread]: On master: BEGIN
+[0m01:21:55.492025 [debug] [MainThread]: Opening a new connection, currently in state init
+[0m01:21:55.492974 [debug] [MainThread]: SQL status: OK in 0.001 seconds
+[0m01:21:55.493437 [debug] [MainThread]: On master: COMMIT
+[0m01:21:55.493888 [debug] [MainThread]: Using sqlite connection "master"
+[0m01:21:55.494305 [debug] [MainThread]: On master: COMMIT
+[0m01:21:55.494726 [debug] [MainThread]: SQL status: OK in 0.000 seconds
+[0m01:21:55.495087 [debug] [MainThread]: On master: Close
+[0m01:21:55.498506 [debug] [Thread-1 (]: Began running node test.naver_shop.accepted_values_dim_products_price_bucket__budget__mid__premium.9c75e17e2d
+[0m01:21:55.499202 [info ] [Thread-1 (]: 1 of 8 START test accepted_values_dim_products_price_bucket__budget__mid__premium  [RUN]
+[0m01:21:55.500020 [debug] [Thread-1 (]: Re-using an available connection from the pool (formerly list_database_main, now test.naver_shop.accepted_values_dim_products_price_bucket__budget__mid__premium.9c75e17e2d)
+[0m01:21:55.500552 [debug] [Thread-1 (]: Began compiling node test.naver_shop.accepted_values_dim_products_price_bucket__budget__mid__premium.9c75e17e2d
+[0m01:21:55.527590 [debug] [Thread-1 (]: Writing injected SQL for node "test.naver_shop.accepted_values_dim_products_price_bucket__budget__mid__premium.9c75e17e2d"
+[0m01:21:55.532873 [debug] [Thread-1 (]: Began executing node test.naver_shop.accepted_values_dim_products_price_bucket__budget__mid__premium.9c75e17e2d
+[0m01:21:55.551433 [debug] [Thread-1 (]: Writing runtime sql for node "test.naver_shop.accepted_values_dim_products_price_bucket__budget__mid__premium.9c75e17e2d"
+[0m01:21:55.554788 [debug] [Thread-1 (]: Using sqlite connection "test.naver_shop.accepted_values_dim_products_price_bucket__budget__mid__premium.9c75e17e2d"
+[0m01:21:55.555372 [debug] [Thread-1 (]: On test.naver_shop.accepted_values_dim_products_price_bucket__budget__mid__premium.9c75e17e2d: BEGIN
+[0m01:21:55.555844 [debug] [Thread-1 (]: Opening a new connection, currently in state closed
+[0m01:21:55.556892 [debug] [Thread-1 (]: SQL status: OK in 0.001 seconds
+[0m01:21:55.557409 [debug] [Thread-1 (]: Using sqlite connection "test.naver_shop.accepted_values_dim_products_price_bucket__budget__mid__premium.9c75e17e2d"
+[0m01:21:55.557858 [debug] [Thread-1 (]: On test.naver_shop.accepted_values_dim_products_price_bucket__budget__mid__premium.9c75e17e2d: /* {"app": "dbt", "dbt_version": "1.9.0", "profile_name": "naver_shop", "target_name": "dev", "node_id": "test.naver_shop.accepted_values_dim_products_price_bucket__budget__mid__premium.9c75e17e2d"} */
+select
+      count(*) as failures,
+      case when count(*) != 0
+        then 'true' else 'false' end as should_warn,
+      case when count(*) != 0
+        then 'true' else 'false' end as should_error
+    from (
+      
+    
+    
+
+with all_values as (
+
+    select
+        price_bucket as value_field,
+        count(*) as n_records
+
+    from main."dim_products"
+    group by price_bucket
+
+)
+
+select *
+from all_values
+where value_field not in (
+    'budget','mid','premium'
+)
+
+
+
+      
+    ) dbt_internal_test
+[0m01:21:55.566905 [debug] [Thread-1 (]: SQL status: OK in 0.008 seconds
+[0m01:21:55.572821 [debug] [Thread-1 (]: On test.naver_shop.accepted_values_dim_products_price_bucket__budget__mid__premium.9c75e17e2d: ROLLBACK
+[0m01:21:55.573470 [debug] [Thread-1 (]: On test.naver_shop.accepted_values_dim_products_price_bucket__budget__mid__premium.9c75e17e2d: Close
+[0m01:21:55.574489 [info ] [Thread-1 (]: 1 of 8 PASS accepted_values_dim_products_price_bucket__budget__mid__premium .... [[32mPASS[0m in 0.07s]
+[0m01:21:55.575295 [debug] [Thread-1 (]: Finished running node test.naver_shop.accepted_values_dim_products_price_bucket__budget__mid__premium.9c75e17e2d
+[0m01:21:55.575847 [debug] [Thread-1 (]: Began running node test.naver_shop.not_null_category_summary_product_count.9bc536b678
+[0m01:21:55.576488 [info ] [Thread-1 (]: 2 of 8 START test not_null_category_summary_product_count ...................... [RUN]
+[0m01:21:55.577133 [debug] [Thread-1 (]: Re-using an available connection from the pool (formerly test.naver_shop.accepted_values_dim_products_price_bucket__budget__mid__premium.9c75e17e2d, now test.naver_shop.not_null_category_summary_product_count.9bc536b678)
+[0m01:21:55.577623 [debug] [Thread-1 (]: Began compiling node test.naver_shop.not_null_category_summary_product_count.9bc536b678
+[0m01:21:55.585703 [debug] [Thread-1 (]: Writing injected SQL for node "test.naver_shop.not_null_category_summary_product_count.9bc536b678"
+[0m01:21:55.586711 [debug] [Thread-1 (]: Began executing node test.naver_shop.not_null_category_summary_product_count.9bc536b678
+[0m01:21:55.589477 [debug] [Thread-1 (]: Writing runtime sql for node "test.naver_shop.not_null_category_summary_product_count.9bc536b678"
+[0m01:21:55.590478 [debug] [Thread-1 (]: Using sqlite connection "test.naver_shop.not_null_category_summary_product_count.9bc536b678"
+[0m01:21:55.590988 [debug] [Thread-1 (]: On test.naver_shop.not_null_category_summary_product_count.9bc536b678: BEGIN
+[0m01:21:55.591386 [debug] [Thread-1 (]: Opening a new connection, currently in state closed
+[0m01:21:55.593485 [debug] [Thread-1 (]: SQL status: OK in 0.002 seconds
+[0m01:21:55.593944 [debug] [Thread-1 (]: Using sqlite connection "test.naver_shop.not_null_category_summary_product_count.9bc536b678"
+[0m01:21:55.594470 [debug] [Thread-1 (]: On test.naver_shop.not_null_category_summary_product_count.9bc536b678: /* {"app": "dbt", "dbt_version": "1.9.0", "profile_name": "naver_shop", "target_name": "dev", "node_id": "test.naver_shop.not_null_category_summary_product_count.9bc536b678"} */
+select
+      count(*) as failures,
+      case when count(*) != 0
+        then 'true' else 'false' end as should_warn,
+      case when count(*) != 0
+        then 'true' else 'false' end as should_error
+    from (
+      
+    
+    
+
+
+
+select product_count
+from main."category_summary"
+where product_count is null
+
+
+
+      
+    ) dbt_internal_test
+[0m01:21:55.595004 [debug] [Thread-1 (]: SQL status: OK in 0.000 seconds
+[0m01:21:55.596712 [debug] [Thread-1 (]: On test.naver_shop.not_null_category_summary_product_count.9bc536b678: ROLLBACK
+[0m01:21:55.597231 [debug] [Thread-1 (]: On test.naver_shop.not_null_category_summary_product_count.9bc536b678: Close
+[0m01:21:55.597970 [info ] [Thread-1 (]: 2 of 8 PASS not_null_category_summary_product_count ............................ [[32mPASS[0m in 0.02s]
+[0m01:21:55.598731 [debug] [Thread-1 (]: Finished running node test.naver_shop.not_null_category_summary_product_count.9bc536b678
+[0m01:21:55.599198 [debug] [Thread-1 (]: Began running node test.naver_shop.not_null_dim_products_link.e31487c5e7
+[0m01:21:55.599841 [info ] [Thread-1 (]: 3 of 8 START test not_null_dim_products_link ................................... [RUN]
+[0m01:21:55.600479 [debug] [Thread-1 (]: Re-using an available connection from the pool (formerly test.naver_shop.not_null_category_summary_product_count.9bc536b678, now test.naver_shop.not_null_dim_products_link.e31487c5e7)
+[0m01:21:55.600909 [debug] [Thread-1 (]: Began compiling node test.naver_shop.not_null_dim_products_link.e31487c5e7
+[0m01:21:55.605945 [debug] [Thread-1 (]: Writing injected SQL for node "test.naver_shop.not_null_dim_products_link.e31487c5e7"
+[0m01:21:55.607119 [debug] [Thread-1 (]: Began executing node test.naver_shop.not_null_dim_products_link.e31487c5e7
+[0m01:21:55.610086 [debug] [Thread-1 (]: Writing runtime sql for node "test.naver_shop.not_null_dim_products_link.e31487c5e7"
+[0m01:21:55.611341 [debug] [Thread-1 (]: Using sqlite connection "test.naver_shop.not_null_dim_products_link.e31487c5e7"
+[0m01:21:55.612190 [debug] [Thread-1 (]: On test.naver_shop.not_null_dim_products_link.e31487c5e7: BEGIN
+[0m01:21:55.612642 [debug] [Thread-1 (]: Opening a new connection, currently in state closed
+[0m01:21:55.613975 [debug] [Thread-1 (]: SQL status: OK in 0.001 seconds
+[0m01:21:55.614565 [debug] [Thread-1 (]: Using sqlite connection "test.naver_shop.not_null_dim_products_link.e31487c5e7"
+[0m01:21:55.615086 [debug] [Thread-1 (]: On test.naver_shop.not_null_dim_products_link.e31487c5e7: /* {"app": "dbt", "dbt_version": "1.9.0", "profile_name": "naver_shop", "target_name": "dev", "node_id": "test.naver_shop.not_null_dim_products_link.e31487c5e7"} */
+select
+      count(*) as failures,
+      case when count(*) != 0
+        then 'true' else 'false' end as should_warn,
+      case when count(*) != 0
+        then 'true' else 'false' end as should_error
+    from (
+      
+    
+    
+
+
+
+select link
+from main."dim_products"
+where link is null
+
+
+
+      
+    ) dbt_internal_test
+[0m01:21:55.618024 [debug] [Thread-1 (]: SQL status: OK in 0.002 seconds
+[0m01:21:55.619766 [debug] [Thread-1 (]: On test.naver_shop.not_null_dim_products_link.e31487c5e7: ROLLBACK
+[0m01:21:55.620277 [debug] [Thread-1 (]: On test.naver_shop.not_null_dim_products_link.e31487c5e7: Close
+[0m01:21:55.621194 [info ] [Thread-1 (]: 3 of 8 PASS not_null_dim_products_link ......................................... [[32mPASS[0m in 0.02s]
+[0m01:21:55.621921 [debug] [Thread-1 (]: Finished running node test.naver_shop.not_null_dim_products_link.e31487c5e7
+[0m01:21:55.622513 [debug] [Thread-1 (]: Began running node test.naver_shop.not_null_dim_products_low_price.a8874380bf
+[0m01:21:55.623064 [info ] [Thread-1 (]: 4 of 8 START test not_null_dim_products_low_price .............................. [RUN]
+[0m01:21:55.623802 [debug] [Thread-1 (]: Re-using an available connection from the pool (formerly test.naver_shop.not_null_dim_products_link.e31487c5e7, now test.naver_shop.not_null_dim_products_low_price.a8874380bf)
+[0m01:21:55.624454 [debug] [Thread-1 (]: Began compiling node test.naver_shop.not_null_dim_products_low_price.a8874380bf
+[0m01:21:55.630016 [debug] [Thread-1 (]: Writing injected SQL for node "test.naver_shop.not_null_dim_products_low_price.a8874380bf"
+[0m01:21:55.631344 [debug] [Thread-1 (]: Began executing node test.naver_shop.not_null_dim_products_low_price.a8874380bf
+[0m01:21:55.634077 [debug] [Thread-1 (]: Writing runtime sql for node "test.naver_shop.not_null_dim_products_low_price.a8874380bf"
+[0m01:21:55.635387 [debug] [Thread-1 (]: Using sqlite connection "test.naver_shop.not_null_dim_products_low_price.a8874380bf"
+[0m01:21:55.635870 [debug] [Thread-1 (]: On test.naver_shop.not_null_dim_products_low_price.a8874380bf: BEGIN
+[0m01:21:55.636257 [debug] [Thread-1 (]: Opening a new connection, currently in state closed
+[0m01:21:55.637149 [debug] [Thread-1 (]: SQL status: OK in 0.001 seconds
+[0m01:21:55.637882 [debug] [Thread-1 (]: Using sqlite connection "test.naver_shop.not_null_dim_products_low_price.a8874380bf"
+[0m01:21:55.638562 [debug] [Thread-1 (]: On test.naver_shop.not_null_dim_products_low_price.a8874380bf: /* {"app": "dbt", "dbt_version": "1.9.0", "profile_name": "naver_shop", "target_name": "dev", "node_id": "test.naver_shop.not_null_dim_products_low_price.a8874380bf"} */
+select
+      count(*) as failures,
+      case when count(*) != 0
+        then 'true' else 'false' end as should_warn,
+      case when count(*) != 0
+        then 'true' else 'false' end as should_error
+    from (
+      
+    
+    
+
+
+
+select low_price
+from main."dim_products"
+where low_price is null
+
+
+
+      
+    ) dbt_internal_test
+[0m01:21:55.642675 [debug] [Thread-1 (]: SQL status: OK in 0.004 seconds
+[0m01:21:55.646462 [debug] [Thread-1 (]: On test.naver_shop.not_null_dim_products_low_price.a8874380bf: ROLLBACK
+[0m01:21:55.647117 [debug] [Thread-1 (]: On test.naver_shop.not_null_dim_products_low_price.a8874380bf: Close
+[0m01:21:55.647999 [info ] [Thread-1 (]: 4 of 8 PASS not_null_dim_products_low_price .................................... [[32mPASS[0m in 0.02s]
+[0m01:21:55.648809 [debug] [Thread-1 (]: Finished running node test.naver_shop.not_null_dim_products_low_price.a8874380bf
+[0m01:21:55.649334 [debug] [Thread-1 (]: Began running node test.naver_shop.not_null_dim_products_product_id.c8aba288d1
+[0m01:21:55.649933 [info ] [Thread-1 (]: 5 of 8 START test not_null_dim_products_product_id ............................. [RUN]
+[0m01:21:55.650656 [debug] [Thread-1 (]: Re-using an available connection from the pool (formerly test.naver_shop.not_null_dim_products_low_price.a8874380bf, now test.naver_shop.not_null_dim_products_product_id.c8aba288d1)
+[0m01:21:55.651127 [debug] [Thread-1 (]: Began compiling node test.naver_shop.not_null_dim_products_product_id.c8aba288d1
+[0m01:21:55.655684 [debug] [Thread-1 (]: Writing injected SQL for node "test.naver_shop.not_null_dim_products_product_id.c8aba288d1"
+[0m01:21:55.657010 [debug] [Thread-1 (]: Began executing node test.naver_shop.not_null_dim_products_product_id.c8aba288d1
+[0m01:21:55.659604 [debug] [Thread-1 (]: Writing runtime sql for node "test.naver_shop.not_null_dim_products_product_id.c8aba288d1"
+[0m01:21:55.661004 [debug] [Thread-1 (]: Using sqlite connection "test.naver_shop.not_null_dim_products_product_id.c8aba288d1"
+[0m01:21:55.661628 [debug] [Thread-1 (]: On test.naver_shop.not_null_dim_products_product_id.c8aba288d1: BEGIN
+[0m01:21:55.662057 [debug] [Thread-1 (]: Opening a new connection, currently in state closed
+[0m01:21:55.663034 [debug] [Thread-1 (]: SQL status: OK in 0.001 seconds
+[0m01:21:55.663488 [debug] [Thread-1 (]: Using sqlite connection "test.naver_shop.not_null_dim_products_product_id.c8aba288d1"
+[0m01:21:55.663896 [debug] [Thread-1 (]: On test.naver_shop.not_null_dim_products_product_id.c8aba288d1: /* {"app": "dbt", "dbt_version": "1.9.0", "profile_name": "naver_shop", "target_name": "dev", "node_id": "test.naver_shop.not_null_dim_products_product_id.c8aba288d1"} */
+select
+      count(*) as failures,
+      case when count(*) != 0
+        then 'true' else 'false' end as should_warn,
+      case when count(*) != 0
+        then 'true' else 'false' end as should_error
+    from (
+      
+    
+    
+
+
+
+select product_id
+from main."dim_products"
+where product_id is null
+
+
+
+      
+    ) dbt_internal_test
+[0m01:21:55.666533 [debug] [Thread-1 (]: SQL status: OK in 0.002 seconds
+[0m01:21:55.668171 [debug] [Thread-1 (]: On test.naver_shop.not_null_dim_products_product_id.c8aba288d1: ROLLBACK
+[0m01:21:55.668706 [debug] [Thread-1 (]: On test.naver_shop.not_null_dim_products_product_id.c8aba288d1: Close
+[0m01:21:55.669482 [info ] [Thread-1 (]: 5 of 8 PASS not_null_dim_products_product_id ................................... [[32mPASS[0m in 0.02s]
+[0m01:21:55.670239 [debug] [Thread-1 (]: Finished running node test.naver_shop.not_null_dim_products_product_id.c8aba288d1
+[0m01:21:55.670800 [debug] [Thread-1 (]: Began running node test.naver_shop.unique_category_summary_category_l1.41927305b1
+[0m01:21:55.671436 [info ] [Thread-1 (]: 6 of 8 START test unique_category_summary_category_l1 .......................... [RUN]
+[0m01:21:55.672064 [debug] [Thread-1 (]: Re-using an available connection from the pool (formerly test.naver_shop.not_null_dim_products_product_id.c8aba288d1, now test.naver_shop.unique_category_summary_category_l1.41927305b1)
+[0m01:21:55.672508 [debug] [Thread-1 (]: Began compiling node test.naver_shop.unique_category_summary_category_l1.41927305b1
+[0m01:21:55.679714 [debug] [Thread-1 (]: Writing injected SQL for node "test.naver_shop.unique_category_summary_category_l1.41927305b1"
+[0m01:21:55.680650 [debug] [Thread-1 (]: Began executing node test.naver_shop.unique_category_summary_category_l1.41927305b1
+[0m01:21:55.683849 [debug] [Thread-1 (]: Writing runtime sql for node "test.naver_shop.unique_category_summary_category_l1.41927305b1"
+[0m01:21:55.684771 [debug] [Thread-1 (]: Using sqlite connection "test.naver_shop.unique_category_summary_category_l1.41927305b1"
+[0m01:21:55.685345 [debug] [Thread-1 (]: On test.naver_shop.unique_category_summary_category_l1.41927305b1: BEGIN
+[0m01:21:55.685890 [debug] [Thread-1 (]: Opening a new connection, currently in state closed
+[0m01:21:55.686811 [debug] [Thread-1 (]: SQL status: OK in 0.001 seconds
+[0m01:21:55.687337 [debug] [Thread-1 (]: Using sqlite connection "test.naver_shop.unique_category_summary_category_l1.41927305b1"
+[0m01:21:55.687770 [debug] [Thread-1 (]: On test.naver_shop.unique_category_summary_category_l1.41927305b1: /* {"app": "dbt", "dbt_version": "1.9.0", "profile_name": "naver_shop", "target_name": "dev", "node_id": "test.naver_shop.unique_category_summary_category_l1.41927305b1"} */
+select
+      count(*) as failures,
+      case when count(*) != 0
+        then 'true' else 'false' end as should_warn,
+      case when count(*) != 0
+        then 'true' else 'false' end as should_error
+    from (
+      
+    
+    
+
+select
+    category_l1 as unique_field,
+    count(*) as n_records
+
+from main."category_summary"
+where category_l1 is not null
+group by category_l1
+having count(*) > 1
+
+
+
+      
+    ) dbt_internal_test
+[0m01:21:55.688326 [debug] [Thread-1 (]: SQL status: OK in 0.000 seconds
+[0m01:21:55.689806 [debug] [Thread-1 (]: On test.naver_shop.unique_category_summary_category_l1.41927305b1: ROLLBACK
+[0m01:21:55.690465 [debug] [Thread-1 (]: On test.naver_shop.unique_category_summary_category_l1.41927305b1: Close
+[0m01:21:55.691513 [info ] [Thread-1 (]: 6 of 8 PASS unique_category_summary_category_l1 ................................ [[32mPASS[0m in 0.02s]
+[0m01:21:55.692535 [debug] [Thread-1 (]: Finished running node test.naver_shop.unique_category_summary_category_l1.41927305b1
+[0m01:21:55.693360 [debug] [Thread-1 (]: Began running node test.naver_shop.unique_dim_products_link.bcf9ebe875
+[0m01:21:55.694084 [info ] [Thread-1 (]: 7 of 8 START test unique_dim_products_link ..................................... [RUN]
+[0m01:21:55.694779 [debug] [Thread-1 (]: Re-using an available connection from the pool (formerly test.naver_shop.unique_category_summary_category_l1.41927305b1, now test.naver_shop.unique_dim_products_link.bcf9ebe875)
+[0m01:21:55.695224 [debug] [Thread-1 (]: Began compiling node test.naver_shop.unique_dim_products_link.bcf9ebe875
+[0m01:21:55.699652 [debug] [Thread-1 (]: Writing injected SQL for node "test.naver_shop.unique_dim_products_link.bcf9ebe875"
+[0m01:21:55.700411 [debug] [Thread-1 (]: Began executing node test.naver_shop.unique_dim_products_link.bcf9ebe875
+[0m01:21:55.703542 [debug] [Thread-1 (]: Writing runtime sql for node "test.naver_shop.unique_dim_products_link.bcf9ebe875"
+[0m01:21:55.706312 [debug] [Thread-1 (]: Using sqlite connection "test.naver_shop.unique_dim_products_link.bcf9ebe875"
+[0m01:21:55.706996 [debug] [Thread-1 (]: On test.naver_shop.unique_dim_products_link.bcf9ebe875: BEGIN
+[0m01:21:55.707481 [debug] [Thread-1 (]: Opening a new connection, currently in state closed
+[0m01:21:55.708414 [debug] [Thread-1 (]: SQL status: OK in 0.001 seconds
+[0m01:21:55.709222 [debug] [Thread-1 (]: Using sqlite connection "test.naver_shop.unique_dim_products_link.bcf9ebe875"
+[0m01:21:55.709942 [debug] [Thread-1 (]: On test.naver_shop.unique_dim_products_link.bcf9ebe875: /* {"app": "dbt", "dbt_version": "1.9.0", "profile_name": "naver_shop", "target_name": "dev", "node_id": "test.naver_shop.unique_dim_products_link.bcf9ebe875"} */
+select
+      count(*) as failures,
+      case when count(*) != 0
+        then 'true' else 'false' end as should_warn,
+      case when count(*) != 0
+        then 'true' else 'false' end as should_error
+    from (
+      
+    
+    
+
+select
+    link as unique_field,
+    count(*) as n_records
+
+from main."dim_products"
+where link is not null
+group by link
+having count(*) > 1
+
+
+
+      
+    ) dbt_internal_test
+[0m01:21:55.726052 [debug] [Thread-1 (]: SQL status: OK in 0.015 seconds
+[0m01:21:55.727938 [debug] [Thread-1 (]: On test.naver_shop.unique_dim_products_link.bcf9ebe875: ROLLBACK
+[0m01:21:55.728545 [debug] [Thread-1 (]: On test.naver_shop.unique_dim_products_link.bcf9ebe875: Close
+[0m01:21:55.729479 [info ] [Thread-1 (]: 7 of 8 PASS unique_dim_products_link ........................................... [[32mPASS[0m in 0.03s]
+[0m01:21:55.730269 [debug] [Thread-1 (]: Finished running node test.naver_shop.unique_dim_products_link.bcf9ebe875
+[0m01:21:55.730829 [debug] [Thread-1 (]: Began running node test.naver_shop.unique_dim_products_product_id.ef7b2a9985
+[0m01:21:55.731591 [info ] [Thread-1 (]: 8 of 8 START test unique_dim_products_product_id ............................... [RUN]
+[0m01:21:55.732294 [debug] [Thread-1 (]: Re-using an available connection from the pool (formerly test.naver_shop.unique_dim_products_link.bcf9ebe875, now test.naver_shop.unique_dim_products_product_id.ef7b2a9985)
+[0m01:21:55.732759 [debug] [Thread-1 (]: Began compiling node test.naver_shop.unique_dim_products_product_id.ef7b2a9985
+[0m01:21:55.737331 [debug] [Thread-1 (]: Writing injected SQL for node "test.naver_shop.unique_dim_products_product_id.ef7b2a9985"
+[0m01:21:55.738569 [debug] [Thread-1 (]: Began executing node test.naver_shop.unique_dim_products_product_id.ef7b2a9985
+[0m01:21:55.743277 [debug] [Thread-1 (]: Writing runtime sql for node "test.naver_shop.unique_dim_products_product_id.ef7b2a9985"
+[0m01:21:55.744415 [debug] [Thread-1 (]: Using sqlite connection "test.naver_shop.unique_dim_products_product_id.ef7b2a9985"
+[0m01:21:55.745157 [debug] [Thread-1 (]: On test.naver_shop.unique_dim_products_product_id.ef7b2a9985: BEGIN
+[0m01:21:55.745751 [debug] [Thread-1 (]: Opening a new connection, currently in state closed
+[0m01:21:55.746940 [debug] [Thread-1 (]: SQL status: OK in 0.001 seconds
+[0m01:21:55.747590 [debug] [Thread-1 (]: Using sqlite connection "test.naver_shop.unique_dim_products_product_id.ef7b2a9985"
+[0m01:21:55.748214 [debug] [Thread-1 (]: On test.naver_shop.unique_dim_products_product_id.ef7b2a9985: /* {"app": "dbt", "dbt_version": "1.9.0", "profile_name": "naver_shop", "target_name": "dev", "node_id": "test.naver_shop.unique_dim_products_product_id.ef7b2a9985"} */
+select
+      count(*) as failures,
+      case when count(*) != 0
+        then 'true' else 'false' end as should_warn,
+      case when count(*) != 0
+        then 'true' else 'false' end as should_error
+    from (
+      
+    
+    
+
+select
+    product_id as unique_field,
+    count(*) as n_records
+
+from main."dim_products"
+where product_id is not null
+group by product_id
+having count(*) > 1
+
+
+
+      
+    ) dbt_internal_test
+[0m01:21:55.757382 [debug] [Thread-1 (]: SQL status: OK in 0.009 seconds
+[0m01:21:55.759202 [debug] [Thread-1 (]: On test.naver_shop.unique_dim_products_product_id.ef7b2a9985: ROLLBACK
+[0m01:21:55.759770 [debug] [Thread-1 (]: On test.naver_shop.unique_dim_products_product_id.ef7b2a9985: Close
+[0m01:21:55.760811 [info ] [Thread-1 (]: 8 of 8 PASS unique_dim_products_product_id ..................................... [[32mPASS[0m in 0.03s]
+[0m01:21:55.761738 [debug] [Thread-1 (]: Finished running node test.naver_shop.unique_dim_products_product_id.ef7b2a9985
+[0m01:21:55.763925 [debug] [MainThread]: Using sqlite connection "master"
+[0m01:21:55.764358 [debug] [MainThread]: On master: BEGIN
+[0m01:21:55.764744 [debug] [MainThread]: Opening a new connection, currently in state closed
+[0m01:21:55.765624 [debug] [MainThread]: SQL status: OK in 0.001 seconds
+[0m01:21:55.766062 [debug] [MainThread]: On master: COMMIT
+[0m01:21:55.766756 [debug] [MainThread]: Using sqlite connection "master"
+[0m01:21:55.767401 [debug] [MainThread]: On master: COMMIT
+[0m01:21:55.768065 [debug] [MainThread]: SQL status: OK in 0.000 seconds
+[0m01:21:55.768595 [debug] [MainThread]: On master: Close
+[0m01:21:55.769329 [debug] [MainThread]: Connection 'master' was properly closed.
+[0m01:21:55.769702 [debug] [MainThread]: Connection 'test.naver_shop.unique_dim_products_product_id.ef7b2a9985' was properly closed.
+[0m01:21:55.770263 [info ] [MainThread]: 
+[0m01:21:55.770773 [info ] [MainThread]: Finished running 8 data tests in 0 hours 0 minutes and 0.35 seconds (0.35s).
+[0m01:21:55.772343 [debug] [MainThread]: Command end result
+[0m01:21:55.799784 [debug] [MainThread]: Wrote artifact WritableManifest to /opt/airflow/dbt/naver_shop/target/manifest.json
+[0m01:21:55.802308 [debug] [MainThread]: Wrote artifact SemanticManifest to /opt/airflow/dbt/naver_shop/target/semantic_manifest.json
+[0m01:21:55.814699 [debug] [MainThread]: Wrote artifact RunExecutionResult to /opt/airflow/dbt/naver_shop/target/run_results.json
+[0m01:21:55.815479 [info ] [MainThread]: 
+[0m01:21:55.816515 [info ] [MainThread]: [32mCompleted successfully[0m
+[0m01:21:55.817074 [info ] [MainThread]: 
+[0m01:21:55.819075 [info ] [MainThread]: Done. PASS=8 WARN=0 ERROR=0 SKIP=0 TOTAL=8
+[0m01:21:55.820945 [debug] [MainThread]: Resource report: {"command_name": "test", "command_success": true, "command_wall_clock_time": 1.2319695, "process_in_blocks": "1312", "process_kernel_time": 0.619484, "process_mem_max_rss": "116920", "process_out_blocks": "1920", "process_user_time": 4.141449}
+[0m01:21:55.821679 [debug] [MainThread]: Command `dbt test` succeeded at 01:21:55.821542 after 1.23 seconds
+[0m01:21:55.822223 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7bce28a3ce10>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7bce2c694390>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7bce2c71b8d0>]}
+[0m01:21:55.822760 [debug] [MainThread]: Flushing usage events
+[0m01:21:57.197543 [debug] [MainThread]: An error was encountered while trying to flush usage events
