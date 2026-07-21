@@ -10,5 +10,19 @@
 #                      (커뮤니티 유지보수 어댑터; PostgreSQL 전환 시 dbt-postgres로 교체)
 # ============================================================
 requests==2.34.2
-dbt-core==1.8.0
-dbt-sqlite==1.8.0
+dbt-core==1.9.0
+dbt-sqlite==1.9.1
+
+# =============07-02===============
+boto3
+pandas
+pyarrow
+
+# =============07-17===============
+# protobuf==5.27.2
+# grpcio==1.66.1
+# grpcio-tools==1.66.1
+apache-airflow-providers-amazon>=8.0.0
+pillow
+qdrant-client==1.10.1
+sentence-transformers==3.0.1

@@ -47,6 +47,14 @@ x-airflow-common:
     AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
     AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
     AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
+    QDRANT_HOST: ${QDRANT_HOST}
+    QDRANT_PORT: ${QDRANT_PORT:-6333}
+    QDRANT_COLLECTION: ${QDRANT_COLLECTION:-products_images}
+    OMP_NUM_THREADS: "1"
+    MKL_NUM_THREADS: "1"
+    TOKENIZERS_PARALLELISM: "false"
+    EMBED_DOWNLOAD_WORKERS: "4"
+    EMBED_BATCH_SIZE: "8"
   volumes:
     - ./dags:/opt/airflow/dags
     # 프로젝트 루트(collect_naver_shopping_prod.py가 있는 상위 폴더)를 마운트
